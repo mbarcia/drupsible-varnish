@@ -1,0 +1,267 @@
+vcl 4.0;
+
+# {{ ansible_managed }}
+
+# Load the directors.
+import directors;    
+# Import VMod's.
+import std;
+
+{% for host in groups.drupsible_deploy %}
+backend {{ host | regex_replace('[.]', '') }} {
+  .host = "{{ host }}";
+  .port = "{{ apache_port|default('8080') }}";
+  .connect_timeout = 30s;
+  .first_byte_timeout = 60s;
+  .between_bytes_timeout = 20s;
+  .max_connections = 150;
+  .probe = {
+         .url = "/status.php";
+         .interval = 60s;
+         .timeout = 5 s;
+         .window = 5;
+         .threshold = 3;
+   }
+}
+{% endfor %}
+
+sub vcl_init {
+    new drupsible_director = directors.round_robin();
+{% for host in groups.drupsible_deploy %}
+    drupsible_director.add_backend({{ host | regex_replace('[.]', '') }});
+{% endfor %}
+}
+
+# Define the internal network to access cron.php, install.php and purge with Ctrl-F5.
+acl internal {
+{% for allowed_host in varnish_allowed_hosts %}
+        "{{ allowed_host }}";
+{% endfor %}
+}
+
+sub vcl_recv {
+{% for trusted_host_pattern in trusted_host_patterns %}
+  if (req.http.host !~ "{{ trusted_host_pattern }}") {
+    return (synth(418, "http://" + req.http.host + req.url));
+  }
+{% endfor %}
+
+  if (req.method == "PURGE") {
+    return(purge);
+  }
+
+  set req.backend_hint = drupsible_director.backend();
+  
+  # Pipe these paths directly to Apache for streaming.
+  if (req.url ~ "/(download|export)$") {
+    return (pipe);
+  }
+
+  # Do not cache these paths.
+  if (req.url ~ "^/status\.php$" ||
+      req.url ~ "^/update\.php$" ||
+      req.url ~ "^/user/logout$" ||
+      req.url ~ "^/ooyala/ping$" ||
+      req.url ~ "^/admin/.*$" ||
+      req.url ~ "^/info/.*$" ||
+      req.url ~ "^/flag/.*$" ||
+      req.url ~ "^.*/ajax/.*$" ||
+      req.url ~ "^/phpMyAdmin/.*$" ||
+      req.url ~ "^.*/ahah/.*$") {
+       return (pass);
+  }
+
+  if (req.http.host == "{{ webdomain }}") {
+    set req.http.host = "{{ webhost }}.{{ webdomain }}";
+    if ( req.http.X-Forwarded-Proto !~ "(?i)https") {
+      error 750 "http://" + req.http.host + req.url;
+    }
+    else {
+      error 750 "https://" + req.http.host + req.url;
+    }
+  }
+
+  # Always cache the following file types for all users. This list of extensions
+  # appears twice, once here and again in vcl_fetch so make sure you edit both
+  # and keep them equal.
+  if (req.url ~ "(?i)\.(html|pdf|asc|dat|txt|doc|xls|ttf|ppt|woff|eot|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
+    unset req.http.Cookie;
+    return(hash);
+  }
+
+  # Use anonymous, cached pages if all backends are down.
+  if (!std.healthy(req.backend_hint)) {
+    unset req.http.Cookie;
+  }
+
+  # Ignore all "POST" requests - nothing cacheable there
+  if (req.method == "POST") {
+    return (pass);
+  }
+
+  # Do not cache the user paths either
+  if (req.url ~ "^/(user|user/(login|password|register))$") {
+    return(pass);
+  }
+
+  # Only allow internal access to cron.php or install.php.
+  if (req.url ~ "^/(cron|install)\.php$" && !client.ip ~ internal) {
+    # Use a custom error page that you've defined in Drupal at the path "404".
+    set req.url = "/404";
+  }
+
+  # Only allow PURGE from acl internal
+  if (req.method == "PURGE" && !client.ip ~ internal) {
+    error 405 "Not allowed.";
+  }
+
+  # Allow the backend to serve up stale content if it is responding slowly.
+  set req.grace = 6h;
+
+  if (req.restarts == 0) {
+    if (req.http.x-forwarded-for) {
+      set req.http.X-Forwarded-For =
+      req.http.X-Forwarded-For + ", " + client.ip;
+    } else {
+      set req.http.X-Forwarded-For = client.ip;
+    }
+  }
+
+  # Handle compression correctly. Different browsers send different
+  # "Accept-Encoding" headers, even though they mostly all support the same
+  # compression mechanisms. By consolidating these compression headers into
+  # a consistent format, we can reduce the size of the cache and get more hits.
+  # @see: http:// varnish.projects.linpro.no/wiki/FAQ/Compression
+  if (req.http.Accept-Encoding) {
+    if (req.http.Accept-Encoding ~ "gzip") {
+      # If the browser supports it, we'll use gzip.
+      set req.http.Accept-Encoding = "gzip";
+    }
+    else if (req.http.Accept-Encoding ~ "deflate") {
+      # Next, try deflate if it is supported.
+      set req.http.Accept-Encoding = "deflate";
+    }
+    else {
+      # Unknown algorithm. Remove it and send unencoded.
+      unset req.http.Accept-Encoding;
+    }
+  }
+
+  # Don't cache Drupal logged-in user sessions
+  # LOGGED_IN is the cookie that earlier version of Pressflow sets
+  # VARNISH is the cookie which the varnish.module sets
+  if (req.http.Cookie ~ "(VARNISH|DRUPAL_UID|LOGGED_IN|bto.open.userid)") {
+    return (pass);
+  }
+
+  # Force cache here.
+  if (req.url ~ "^/sites/default/files/.*$") {
+    unset req.http.Cookie;
+    return(hash);
+  }
+
+  # Remove all cookies that Drupal doesn't need to know about. We explicitly
+  # list the ones that Drupal does need, the SESS and NO_CACHE. If, after
+  # running this code we find that either of these two cookies remains, we
+  # will pass as the page cannot be cached.
+  if (req.http.Cookie) {
+    # Now strip all BUT the cookies we care about.
+
+    # 1. Append a semi-colon to the front of the cookie string.
+    # 2. Remove all spaces that appear after semi-colons.
+    # 3. Match the cookies we want to keep, adding the space we removed
+    #    previously back. (\1) is first matching group in the regsuball.
+    # 4. Remove all other cookies, identifying them by the fact that they have
+    #    no space after the preceding semi-colon.
+    # 5. Remove all spaces and semi-colons from the beginning and end of the
+    #    cookie string.
+    set req.http.Cookie = ";" + req.http.Cookie;
+    set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
+    set req.http.Cookie = regsuball(req.http.Cookie, ";(SESS[a-zA-Z0-9_-]+|NO_CACHE)=", "; \1=" );
+    set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");
+    set req.http.Cookie = regsuball(req.http.Cookie, "^[; ]+|[; ]+$", "");
+
+    if (req.http.Cookie == "") {
+      # If there are no remaining cookies, remove the cookie header. If there
+      # aren't any cookie headers, Varnish's default behavior will be to cache
+      # the page.
+      unset req.http.Cookie;
+    }
+    else {
+      # Do not cache, ask the backend(s)
+      # std.syslog(0, req.http.Cookie);
+      return (pass);
+    }
+
+  }
+}
+
+sub vcl_hit {
+  #internal hit vcl for CTRL F5
+  if(std.healthy(req.backend_hint)) {
+    if (req.http.pragma ~ "no-cache" || req.http.Cache-Control ~ "no-cache") {
+      if (client.ip ~ internal) {
+        purge;
+        return (pass);
+      }
+    }
+  }
+}
+
+# Code determining what to do when serving items from the Apache servers.
+# beresp == Back-end response from the web server.
+sub vcl_backend_response {
+  # Allow items to be stale if needed
+  set beresp.grace = 6h;
+
+  # Don't allow static files to set cookies.
+  # (?i) denotes case insensitive in PCRE (perl compatible regular expressions).
+  # This list of extensions appears twice, once here and again in vcl_recv so
+  # make sure you edit both and keep them equal.
+  if (bereq.url ~ "(?i)\.(html|pdf|asc|dat|txt|doc|xls|ttf|ppt|woff|eot|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
+    unset beresp.http.set-cookie;
+  }
+
+  # We need this to cache 404s, 301s, 500s. Otherwise, depending on backend but
+  # definitely in Drupal's case these responses are not cacheable by default.
+  if (beresp.status == 404 || beresp.status == 301 || beresp.status == 500) {
+    # Cache responses for 2 minutes
+    set beresp.http.Cache-Control = "max-age=120";
+    set beresp.ttl = 120s;
+    set beresp.grace = 120s;
+  }
+}
+
+# Set a header to track a cache HIT/MISS.
+sub vcl_deliver {
+  if (obj.hits > 0) {
+    set resp.http.X-Varnish-Cache = "HIT";
+  }
+  else {
+    set resp.http.X-Varnish-Cache = "MISS";
+  }
+}
+
+sub vcl_pipe {
+  set bereq.http.connection = "close";
+}
+
+sub vcl_backend_error {
+    # To redirect to www (see vcl_recv)
+    if (beresp.status == 750) {
+        set beresp.http.Location = obj.response;
+        set beresp.status = 301;
+        return(deliver);
+    }
+
+    # Return error to the great firewall of china
+    if (beresp.status == 418) {
+        return(deliver);
+    }
+
+    set beresp.http.Content-Type = "text/html; charset=utf-8";
+    synthetic {"
+{{ varnish_maintenance_page_markup }}
+    "};
+    return (deliver);
+}

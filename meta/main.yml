@@ -1,0 +1,41 @@
+---
+galaxy_info:
+  author: "Mariano Barcia"
+  license: 'GNU General Public License v3'
+  version: 0.9
+  min_ansible_version: 1.8
+  platforms:
+    - name: Ubuntu
+      versions:
+        - trusty
+        - vivid
+    - name: Debian
+      versions:
+        - wheezy
+        - jessie
+  categories:
+    - web
+
+dependencies:
+  - role: debops.ferm
+    ferm_input_list:
+      - type: 'dport_accept'
+        dport: [ 'http' ]
+        accept_any: True
+        filename: 'varnish_dependency_accept'
+        weight: '10'
+
+  - role: debops.apt
+    apt_packages: [ 'python-pycurl', 'varnish' ]
+    apt_keys: [
+      {
+        url: "https://repo.varnish-cache.org/GPG-key.txt",
+        state: "present"
+      }
+    ]
+    apt_repositories: [
+      {
+      repo: "deb https://repo.varnish-cache.org/{{ansible_distribution|lower()}}/ {{ansible_distribution_release}} varnish-{{varnish_version}}",
+      state: "present"
+      }
+    ]

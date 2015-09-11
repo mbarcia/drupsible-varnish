@@ -1,0 +1,28 @@
+---
+- name: Create configuration directories
+  file:
+    dest: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ varnish_vcl_dir }}"
+  tags:
+    - conf
+    - varnish
+
+- name: Configure Varnish
+  template:
+    src: varnish.conf.j2
+    dest: "{{ varnish_conf_file }}"
+  notify: Restart varnish
+  tags:
+    - conf
+    - varnish
+
+- name: Create vcl
+  template:
+    src: "{{ varnish_template_name + '.vcl.j2' }}"
+    dest: "{{ varnish_vcl_dir }}/{{ varnish_template_name }}.vcl"
+  notify: Restart varnish
+  tags:
+    - conf
+    - varnish

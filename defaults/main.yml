@@ -51,7 +51,7 @@ varnish_environment: {}
 
 # Use the specified host as backend server. If port is not specified, the
 # default is 8080.
-varnish_backend: 0.0.0.0:8080
+varnish_backend: 8080
 
 # Listen for client requests on the specified addresses. The address can
 # be a host name (“localhost”), an IPv4 dotted-quad (“127.0.0.1”), or an IPv6
@@ -59,15 +59,14 @@ varnish_backend: 0.0.0.0:8080
 # varnishd will listen on all available IPv4 and IPv6 interfaces. If port is not
 # specified, the default HTTP port as listed in /etc/services is used.
 varnish_http_server: on
-varnish_http_server_listen_on:
-  - 0.0.0.0:80
+varnish_http_server_listen_on: '80'
 
 # Offer a management interface on the specified address and port.
 varnish_management_console: on
-varnish_management_console_listen_on: 127.0.0.1:2000
+varnish_management_console_listen_on: 6082
 # Path to a file containing a secret used for authorizing access to the
 # management port.
-varnish_management_console_secret_file:
+varnish_management_console_secret_file: "/etc/varnish/secret"
 
 
 # Common settings
@@ -189,7 +188,7 @@ varnish_hash_algorithm:
 varnish_storage_backends:
   default:
     type: malloc
-    options: ['{{ansible_memtotal_mb / 2}}M']
+    options: ['{{ansible_memtotal_mb / 2 |round|int }}M']
 
 # The storage backend named "Transient" will be used for transient (short lived)
 # objects. By default Varnish uses an unlimited malloc backend for this.
@@ -625,3 +624,7 @@ varnish_maintenance_page_synth_markup: |
       <p>Varnish cache server</p>
     </body>
   </html>
+
+# List of IP addresses to be granted access to purge, cron.php and install.php.
+# Also granted console access to these.
+varnish_allowed_hosts: []

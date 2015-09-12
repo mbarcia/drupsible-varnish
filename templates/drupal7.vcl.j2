@@ -16,7 +16,7 @@ backend {{ host | regex_replace('[.]', '') }} {
   .between_bytes_timeout = 20s;
   .max_connections = 150;
   .probe = {
-         .url = "/status.php";
+         .url = "{{ server_status_path }}";
          .interval = 60s;
          .timeout = 5 s;
          .window = 5;

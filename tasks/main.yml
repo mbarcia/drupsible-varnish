@@ -9,6 +9,17 @@
     - conf
     - varnish
 
+- name: Create secret key file
+  shell: "echo \"{{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }}\" > {{ varnish_management_console_secret_file }}"
+
+- name: Adapt to systemd
+  lineinfile:
+    dest: /etc/systemd/system/varnish.service
+    follow: yes
+    insertafter: "^\\[Service\\]$"
+    state: present
+    line: "EnvironmentFile=/etc/default/varnish"
+
 - name: Configure Varnish
   template:
     src: varnish.conf.j2

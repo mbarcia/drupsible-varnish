@@ -9,10 +9,35 @@
     - conf
     - varnish
 
-- name: Create secret key file
-  shell: "echo \"{{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }}\" > {{ varnish_management_console_secret_file }}"
-  args:
-    creates: "{{ varnish_management_console_secret_file }}"
+- name: Stat secret remote file
+  stat: 
+    path: "{{ varnish_management_console_secret_file }}" 
+  register: secret_file
+  changed_when: no
+  tags:
+    - conf
+    - varnish
+
+- name: Read secret remote file if it exists
+  shell: cat {{ varnish_management_console_secret_file }}
+  register: secret_remote
+  when: secret_file.stat.exists
+  changed_when: no
+  tags:
+    - conf
+    - varnish
+
+- name: Create/read secret local file
+  shell: echo {{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }}
+  register: secret_local
+  changed_when: no
+  tags:
+    - conf
+    - varnish
+
+- name: Copy secret key file if needed
+  shell: echo {{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }} > {{ varnish_management_console_secret_file }}
+  when: secret_remote is not defined or secret_local.stdout != secret_remote.stdout
   tags:
     - conf
     - varnish
@@ -57,6 +82,7 @@
   notify:
     - Reload systemd
   tags:
+    - systemd
     - conf
     - varnish
 

@@ -25,8 +25,8 @@ dependencies:
         filename: 'varnish_dependency_accept'
         weight: '10'
       - type: 'dport_accept'
-        dport: [ {{ varnish_management_console_listen_on }} ]
-        accept: {{ varnish_allowed_hosts }}
+        dport: [ "{{ varnish_management_console_listen_on }}" ]
+        accept: "{{ varnish_allowed_hosts }}"
         filename: 'varnish_console_dependency_accept'
         weight: '60'
 

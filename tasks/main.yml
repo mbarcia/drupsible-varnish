@@ -11,14 +11,26 @@
 
 - name: Create secret key file
   shell: "echo \"{{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }}\" > {{ varnish_management_console_secret_file }}"
+  tags:
+    - conf
+    - varnish
 
-- name: Adapt to systemd
+- name: Adapt to systemd (copy Varnish init script)
+  command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/"
+  tags:
+    - conf
+    - varnish
+
+- name: Adapt to systemd (add env file from Varnish package)
   lineinfile:
     dest: /etc/systemd/system/varnish.service
     follow: yes
     insertafter: "^\\[Service\\]$"
     state: present
     line: "EnvironmentFile=/etc/default/varnish"
+  tags:
+    - conf
+    - varnish
 
 - name: Configure Varnish
   template:

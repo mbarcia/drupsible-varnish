@@ -3,3 +3,11 @@
   service: 
     name: varnish 
     state: restarted
+
+- name: Reload varnish
+  service: 
+    name: varnish 
+    state: reloaded
+
+- name: Reload systemd
+  command: systemctl daemon-reload

@@ -11,24 +11,51 @@
 
 - name: Create secret key file
   shell: "echo \"{{ lookup('password', secret + '/credentials/varnish/secret chars=ascii_letters,digits,hexdigits') }}\" > {{ varnish_management_console_secret_file }}"
+  args:
+    creates: "{{ varnish_management_console_secret_file }}"
   tags:
     - conf
     - varnish
 
-- name: Adapt to systemd (copy Varnish init script)
+- name: Copy Varnish init script
   command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/"
+  args:
+    creates: /etc/systemd/system/
+  notify:
+    - Reload systemd
+    - Restart varnish
   tags:
+    - systemd
     - conf
     - varnish
 
-- name: Adapt to systemd (add env file from Varnish package)
+- name: Add env file from Varnish package
   lineinfile:
     dest: /etc/systemd/system/varnish.service
     follow: yes
     insertafter: "^\\[Service\\]$"
     state: present
     line: "EnvironmentFile=/etc/default/varnish"
+    backup: yes
+  notify:
+    - Restart varnish
+    - Reload systemd
   tags:
+    - systemd
+    - conf
+    - varnish
+
+- name: Replace stock command line
+  replace:
+    dest: /etc/systemd/system/varnish.service
+    follow: yes
+    regexp: "^ExecStart=/usr/sbin/varnishd.*$"
+    replace: "ExecStart=/usr/sbin/varnishd ${DAEMON_OPTS}"
+  notify:
+    - Restart varnish
+    - Reload systemd
+  tags:
+    - systemd
     - conf
     - varnish
 
@@ -45,7 +72,8 @@
   template:
     src: "{{ varnish_template_name + '.vcl.j2' }}"
     dest: "{{ varnish_vcl_dir }}/{{ varnish_template_name }}.vcl"
-  notify: Restart varnish
+  notify: 
+    - Reload varnish
   tags:
     - conf
     - varnish

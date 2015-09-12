@@ -18,9 +18,9 @@
     - varnish
 
 - name: Copy Varnish init script
-  command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/"
+  command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/varnish.service"
   args:
-    creates: /etc/systemd/system/
+    creates: /etc/systemd/system/varnish.service
   notify:
     - Reload systemd
     - Restart varnish
@@ -50,7 +50,7 @@
     dest: /etc/systemd/system/varnish.service
     follow: yes
     regexp: "^ExecStart=/usr/sbin/varnishd.*$"
-    replace: "ExecStart=/usr/sbin/varnishd ${DAEMON_OPTS}"
+    replace: "ExecStart=/usr/sbin/varnishd $DAEMON_OPTS"
   notify:
     - Restart varnish
     - Reload systemd

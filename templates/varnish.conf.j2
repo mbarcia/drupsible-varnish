@@ -50,4 +50,4 @@ DAEMON_OPTS="-i {{varnish_identity}}\
 {% for name, backend in varnish_storage_backends.items() %}
  -s {{name}}={{backend.type}}{% if backend.options %},{{backend.options|join(',')}}{% endif %}\
 {% endfor %}
- -l {{varnish_shmlog_size}}"
+ "

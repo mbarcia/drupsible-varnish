@@ -196,6 +196,15 @@ varnish_transient_storage_backend:
   type: malloc
   options: []
 
+# Tuning
+# ------
+
+# Open files (usually 1024, which is way too small for varnish).
+varnish_ulimit: 131072
+
+# Maxiumum locked memory size for shared memory log.
+varnish_memlock: 82000
+
 varnish_maintenance_page_markup: |
   <?xml version="1.0" encoding="utf-8"?>
   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"

@@ -205,6 +205,11 @@ varnish_ulimit: 131072
 # Maxiumum locked memory size for shared memory log.
 varnish_memlock: 82000
 
+# For the complete list of parameters/options available, read
+# https://www.varnish-cache.org/docs/trunk/reference/varnishd.html#ref-varnishd-options
+varnish_params:
+  - pipe_timeout: 600
+
 varnish_maintenance_page_markup: |
   <?xml version="1.0" encoding="utf-8"?>
   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -241,6 +246,7 @@ varnish_maintenance_page_synth_markup: |
     </body>
   </html>
 
-# List of IP addresses to be granted access to purge, cron.php and install.php.
-# Also granted console access to these.
+# List of IP addresses to be granted access to purge, cron.php and install.php 
+# (other than localhost and Vagrant host). This also grants console/terminal 
+# access.
 varnish_allowed_hosts: []

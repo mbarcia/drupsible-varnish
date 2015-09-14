@@ -208,7 +208,7 @@ varnish_memlock: 82000
 # For the complete list of parameters/options available, read
 # https://www.varnish-cache.org/docs/trunk/reference/varnishd.html#ref-varnishd-options
 varnish_params:
-  - pipe_timeout: 600
+  pipe_timeout: 600
 
 varnish_maintenance_page_markup: |
   <?xml version="1.0" encoding="utf-8"?>

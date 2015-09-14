@@ -80,7 +80,7 @@ sub vcl_recv {
   }
 
   if (req.http.host == "{{ webdomain }}") {
-    set req.http.host = "{{ webhost }}.{{ webdomain }}";
+    set req.http.host = "{{ varnish_webhost }}.{{ webdomain }}";
     if ( req.http.X-Forwarded-Proto !~ "(?i)https") {
       return (synth(750, "http://" + req.http.host + req.url));
     }

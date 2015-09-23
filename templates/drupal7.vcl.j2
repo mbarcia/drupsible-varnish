@@ -24,6 +24,7 @@ backend {{ host | regex_replace('[.]', '') }} {
          .threshold = 3;
    }
 {% endif %}
+}
 {% endfor %}
 
 sub vcl_init {

@@ -15,6 +15,7 @@ backend {{ host | regex_replace('[.]', '') }} {
   .first_byte_timeout = 60s;
   .between_bytes_timeout = 20s;
   .max_connections = 150;
+{% if app_target == 'prod' %}
   .probe = {
          .url = "{{ varnish_fpm_ping_path }}";
          .interval = 60s;
@@ -22,7 +23,7 @@ backend {{ host | regex_replace('[.]', '') }} {
          .window = 5;
          .threshold = 3;
    }
-}
+{% endif %}
 {% endfor %}
 
 sub vcl_init {

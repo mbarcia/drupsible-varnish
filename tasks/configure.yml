@@ -1,0 +1,9 @@
+---
+- name: Configure Varnish
+  template:
+    src: varnish.conf.j2
+    dest: "{{ varnish_conf_file }}"
+  tags:
+    - systemd
+    - conf
+    - varnish

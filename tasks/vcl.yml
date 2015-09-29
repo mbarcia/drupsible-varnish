@@ -1,0 +1,10 @@
+---
+- name: Create vcl
+  template:
+    src: "{{ varnish_template_name + '.vcl.j2' }}"
+    dest: "{{ varnish_vcl_dir }}/{{ varnish_template_name }}.vcl"
+  notify: 
+    - Restart varnish
+  tags:
+    - conf
+    - varnish

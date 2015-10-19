@@ -1,5 +1,4 @@
 ---
-
 varnish_template_name: 'drupal7'
 
 # See https://www.varnish-cache.org/docs/4.0/ for the official documentation
@@ -250,3 +249,5 @@ varnish_maintenance_page_synth_markup: |
 # (other than localhost and Vagrant host). This also grants console/terminal 
 # access.
 varnish_allowed_hosts: []
+
+varnish_trusted_hosts_enable: True

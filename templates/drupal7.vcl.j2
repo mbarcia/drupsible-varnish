@@ -42,11 +42,17 @@ acl internal {
 }
 
 sub vcl_recv {
-{% for trusted_host_pattern in trusted_host_patterns %}
-  if (req.http.host !~ "{{ trusted_host_pattern }}") {
+{% if varnish_trusted_hosts_enable|bool %}
+  if (
+    req.http.host != "{{ app_webhost }}.{{ webdomain }}" && 
+{% for trusted_host in trusted_hosts %}
+    req.http.host != "{{ trusted_host }}" && 
+{% endfor %}
+    req.http.host !~ "(?i)^.*{{ webdomain|regex_replace('[.]', '\\.') }}$"
+  ) {
     return (synth(418, "http://" + req.http.host + req.url));
   }
-{% endfor %}
+{% endif %}
 
   if(std.healthy(req.backend_hint)) {
     if (req.http.pragma ~ "no-cache" || req.http.Cache-Control ~ "no-cache") {

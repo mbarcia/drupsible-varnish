@@ -251,3 +251,4 @@ varnish_maintenance_page_synth_markup: |
 varnish_allowed_hosts: []
 
 varnish_trusted_hosts_enable: True
+varnish_regexp_pipe_paths: [ 'admin.*' ]

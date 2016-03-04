@@ -252,3 +252,25 @@ varnish_allowed_hosts: []
 
 varnish_trusted_hosts_enable: True
 varnish_regexp_pipe_paths: [ 'admin.*' ]
+
+varnish_ferm_dependent_rules:
+- type: 'accept'
+  dport: [ 
+    "{{ varnish_http_server_listen_on|default(http) }}", 
+    "{{ varnish_management_console_listen_on|default(6082) }}"
+  ]
+  saddr: "{{ varnish_allowed_hosts }} + ['127.0.0.1', '10.0.2.2']"
+  accept_any: True
+  weight: '10'
+  role: 'varnish'
+  name: 'http_console'
+  multiport: True
+- type: 'accept'
+  chain: 'OUTPUT'
+  dport: [ 
+    "{{ varnish_backend|default(8080) }}"
+  ]
+  accept_any: True
+  weight: '20'
+  role: 'varnish'
+  name: 'backend'

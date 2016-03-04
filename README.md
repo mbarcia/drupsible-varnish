@@ -10,6 +10,8 @@ Requirements
 
 This role can be used indepedently and does NOT require Drupsible to run.
 
+Consider opening the firewall for incoming requests at the console port (default 6082) for trusted hosts.
+
 Example Playbook
 ----------------
 

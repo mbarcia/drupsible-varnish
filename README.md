@@ -1,11 +1,9 @@
 drupsible-varnish
 =================
 
-Installs and configure Varnish 4 for Debian (including systemd) and Ubuntu.
+Installs and configures Varnish 4 for Debian (including systemd) and Ubuntu.
 
-It allows for a customized VCL template, as well as full control of Varnish.
-
-Take a look at defaults/main.yml for the full list of variables available.
+It allows for a customized VCL template, as well as complete fine-tuning of the Varnish server. Read more at defaults/main.yml.
 
 Requirements
 ------------
@@ -15,7 +13,7 @@ This role can be used indepedently and does NOT require Drupsible to run.
 Example Playbook
 ----------------
 
-The default VCL is for Drupal 7, and it is usable right "out of the box".
+The default VCL is for Drupal, and it is usable right "out of the box".
 
 You can provide your own VCL template, ie. creating 
 > ansible/playbooks/templates/mycrazytemplate.vcl.j2

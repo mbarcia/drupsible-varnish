@@ -3,10 +3,6 @@
   command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/varnish.service"
   args:
     creates: /etc/systemd/system/varnish.service
-  tags:
-    - systemd
-    - conf
-    - varnish
 
 - name: Add env file from Varnish package
   lineinfile:
@@ -16,10 +12,6 @@
     state: present
     line: "EnvironmentFile=/etc/default/varnish"
     backup: yes
-  tags:
-    - systemd
-    - conf
-    - varnish
 
 - name: Replace stock command line
   replace:
@@ -27,19 +19,11 @@
     follow: yes
     regexp: "^ExecStart=/usr/sbin/varnishd.*$"
     replace: "ExecStart=/usr/sbin/varnishd $DAEMON_OPTS"
-  tags:
-    - systemd
-    - conf
-    - varnish
 
 - name: Enable varnish at startup
   command: systemctl enable varnish
   args:
     creates: /etc/systemd/system/multi-user.target.wants/varnish.service
-  tags:
-    - systemd
-    - conf
-    - varnish
 
 - name: Configure Varnish
   template:
@@ -47,7 +31,3 @@
     dest: "{{ varnish_conf_file }}"
   notify:
     - Reload systemd
-  tags:
-    - systemd
-    - conf
-    - varnish

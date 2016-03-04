@@ -1,0 +1,11 @@
+---
+- name: Add Varnish APT signing key
+  apt_key: 
+    url: "https://repo.varnish-cache.org/GPG-key.txt"
+    id: C4DEFFEB
+    state: present
+
+- name: Add Varnish APT repository
+  apt_repository: 
+    repo: "deb https://repo.varnish-cache.org/{{ansible_distribution|lower()}}/ {{ansible_distribution_release}} varnish-{{varnish_version}}"
+    state: "present"

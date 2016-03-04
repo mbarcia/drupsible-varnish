@@ -1,4 +1,15 @@
 ---
+- include: apt-repo.yml
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Install packages
+  package:
+    name: {{ item }}
+    state: latest
+  with_items:
+  - 'python-pycurl'
+  - varnish
+
 - include: prepare.yml
 
 - include: configure-systemd.yml

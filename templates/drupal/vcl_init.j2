@@ -1,39 +1,4 @@
-# Load the directors.
-import directors;    
-# Import VMod's.
-import std;
-
+    new {{ app_name }}_director = directors.round_robin();
 {% for host in varnish_apache2_servers %}
-backend {{ host | regex_replace('[-.]', '') }} {
-  .host = "{{ hostvars[host].ansible_eth0.ipv4.address }}";
-  .port = "{{ varnish_apache2_port }}";
-  .connect_timeout = 30s;
-  .first_byte_timeout = 60s;
-  .between_bytes_timeout = 20s;
-  .max_connections = 150;
-{% if app_target == 'prod' %}
-  .probe = {
-         .url = "{{ varnish_fpm_ping_path }}";
-         .interval = 60s;
-         .timeout = 5 s;
-         .window = 5;
-         .threshold = 3;
-   }
-{% endif %}
-}
+    {{ app_name }}_director.add_backend({{ host | regex_replace('[-.]', '') }});
 {% endfor %}
-
-sub vcl_init {
-    new drupsible_director = directors.round_robin();
-{% for host in varnish_apache2_servers %}
-    drupsible_director.add_backend({{ host | regex_replace('[-.]', '') }});
-{% endfor %}
-}
-
-# Define the internal network to access cron.php, install.php and purge with Ctrl-F5.
-acl internal {
-{% for allowed_host in varnish_allowed_hosts %}
-        "{{ allowed_host }}";
-{% endfor %}
-}
-

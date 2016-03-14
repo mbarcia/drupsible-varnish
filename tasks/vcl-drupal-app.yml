@@ -1,4 +1,36 @@
 ---
+- name: Create backends include
+  template:
+    src: "drupal/vcl_backend.j2"
+    dest: "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl"
+  notify: 
+    - Restart varnish
+
+- name: Insert backends for the app in main acl
+  blockinfile:
+    dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
+    insertafter: '#block-backends'
+    block: |
+      include "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl";
+  notify: 
+    - Restart varnish
+
+- name: Create acl include
+  template:
+    src: "drupal/vcl_acl.j2"
+    dest: "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl"
+  notify: 
+    - Restart varnish
+
+- name: Insert a block for the app in main acl
+  blockinfile:
+    dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
+    insertbefore: '#block-acl-end'
+    block: |
+      include "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl";
+  notify: 
+    - Restart varnish
+
 - name: Create init include
   template:
     src: "drupal/vcl_init.j2"
@@ -31,37 +63,5 @@
       {
         include "{{ varnish_vcl_dir }}/{{ app_name }}-recv.vcl";
       }
-  notify: 
-    - Restart varnish
-
-- name: Create acl include
-  template:
-    src: "drupal/vcl_acl.j2"
-    dest: "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl"
-  notify: 
-    - Restart varnish
-
-- name: Insert a block for the app in main acl
-  blockinfile:
-    dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
-    insertbefore: '#block-acl-end'
-    block: |
-      include "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl";
-  notify: 
-    - Restart varnish
-
-- name: Create backends include
-  template:
-    src: "drupal/vcl_backend.j2"
-    dest: "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl"
-  notify: 
-    - Restart varnish
-
-- name: Insert backends for the app in main acl
-  blockinfile:
-    dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
-    insertbefore: '#block-backends'
-    block: |
-      include "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl";
   notify: 
     - Restart varnish

@@ -9,7 +9,6 @@
 - name: Insert a block for the app in main vlc_init
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
-    insertafter: '#block-init-begin'
     insertbefore: '#block-init-end'
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-init.vcl";
@@ -26,7 +25,6 @@
 - name: Insert a block for the app in main vlc_recv
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupal-app.vcl"
-    insertafter: '#block-recv-begin'
     insertbefore: '#block-recv-end'
     block: |
       if (req.http.Host == "{{ webdomain|default('') }}")

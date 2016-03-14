@@ -2,18 +2,29 @@ vcl 4.0;
 
 # {{ ansible_managed }}
 
-#block-init-begin
+# Load the directors.
+import directors;    
+# Import VMod's.
+import std;
+
+#block-backends
+
+sub vcl_init {
 
 #block-init-end
+}
 
+# Define the internal network to access cron.php, install.php and purge with Ctrl-F5.
+acl internal {
+
+#block-acl-end
+}
 sub vcl_recv {
   if (! req.http.Host) {
     error 404 "Need a host header";
   }
   set req.http.Host = regsub(req.http.Host, "^www\.", "");
   set req.http.Host = regsub(req.http.Host, ":80$", "");
-
-#block-recv-begin
 
 #block-recv-end
 }

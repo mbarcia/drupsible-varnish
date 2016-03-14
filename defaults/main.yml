@@ -1,5 +1,6 @@
 ---
-varnish_template_name: 'drupal7'
+# app template name
+varnish_template_name: "drupal-app"
 
 # See https://www.varnish-cache.org/docs/4.0/ for the official documentation
 varnish_version: 4.0
@@ -274,3 +275,5 @@ varnish_ferm_dependent_rules:
   weight: '60'
   role: 'varnish'
   name: 'backend'
+
+varnish_apache2_servers: "{{ groups[ app_name + '-' + app_target + '_deploy' ] }}"

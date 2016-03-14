@@ -19,3 +19,6 @@
   when: ansible_distribution_release != 'jessie' and ansible_distribution_release != 'vivid'
 
 - include: vcl.yml
+
+- include: vcl-drupal-app.yml
+  when: varnish_template_name == 'drupal-app'

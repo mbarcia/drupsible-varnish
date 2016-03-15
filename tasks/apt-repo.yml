@@ -6,7 +6,7 @@
     state: present
 
 - name: Install APT HTTPS transport
-  pkg:
+  package:
     name: apt-transport-https
     state: present
 

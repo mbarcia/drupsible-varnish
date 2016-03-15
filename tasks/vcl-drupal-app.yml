@@ -63,8 +63,9 @@
     insertbefore: '#block-recv-end'
     marker: "# {mark} ANSIBLE MANAGED BLOCK RECV"
     block: |
-      if (req.http.Host == "{{ webdomain|default('') }}")
+      if (req.http.Host ~ "{{ webdomain|default('') }}")
       {
+        set req.backend_hint = {{ app_name }}_director.backend();
         include "{{ varnish_vcl_dir }}/{{ app_name }}-recv.vcl";
       }
   notify: 

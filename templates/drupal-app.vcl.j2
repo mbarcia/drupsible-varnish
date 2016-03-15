@@ -21,10 +21,8 @@ acl internal {
 }
 sub vcl_recv {
   if (! req.http.Host) {
-    error 404 "Need a host header";
+    return (synth(404, "Need a host header in the HTTP request."));
   }
-  set req.http.Host = regsub(req.http.Host, "^www\.", "");
-  set req.http.Host = regsub(req.http.Host, ":80$", "");
 
 #block-recv-end
 }

@@ -5,6 +5,11 @@
     id: C4DEFFEB
     state: present
 
+- name: Install APT HTTPS transport
+  pkg:
+    name: apt-transport-https
+    state: present
+
 - name: Add Varnish APT repository
   apt_repository: 
     repo: "deb https://repo.varnish-cache.org/{{ansible_distribution|lower()}}/ {{ansible_distribution_release}} varnish-{{varnish_version}}"

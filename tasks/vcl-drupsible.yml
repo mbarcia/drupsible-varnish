@@ -10,7 +10,7 @@
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
     insertafter: '#block-backends'
-    marker: "# {mark} ANSIBLE MANAGED BLOCK BACKENDS"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK BACKENDS {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl";
   notify: 
@@ -27,7 +27,7 @@
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
     insertbefore: '#block-acl-end'
-    marker: "# {mark} ANSIBLE MANAGED BLOCK ACL"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK ACL {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl";
   notify: 
@@ -44,7 +44,7 @@
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
     insertbefore: '#block-init-end'
-    marker: "# {mark} ANSIBLE MANAGED BLOCK INIT"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK INIT {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-init.vcl";
   notify: 
@@ -61,7 +61,7 @@
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
     insertbefore: '#block-recv-end'
-    marker: "# {mark} ANSIBLE MANAGED BLOCK RECV"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK RECV {{ app_name }}"
     block: |
       if (req.http.Host ~ "{{ webdomain|default('') }}")
       {

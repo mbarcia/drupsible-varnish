@@ -20,5 +20,5 @@
 
 - include: vcl.yml
 
-- include: vcl-drupal-app.yml
-  when: varnish_template_name == 'drupal-app'
+- include: vcl-drupsible.yml
+  when: varnish_template_name == 'drupsible'

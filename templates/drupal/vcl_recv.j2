@@ -22,8 +22,6 @@
     return(purge);
   }
 
-  set req.backend_hint = drupsible_director.backend();
-  
   # Pipe these paths directly to Apache for streaming.
   if (req.url ~ "/(download|{% for path in varnish_regexp_pipe_paths %}{{ path }}|{% endfor %}export)$") {
     return (pipe);

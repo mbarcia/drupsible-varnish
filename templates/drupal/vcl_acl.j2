@@ -1,0 +1,4 @@
+{% for allowed_host in varnish_allowed_hosts %}
+        "{{ allowed_host }}";
+{% endfor %}
+

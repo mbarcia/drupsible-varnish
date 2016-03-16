@@ -1,5 +1,5 @@
 ---
-- name: Create vcl
+- name: Create main VCL
   template:
     src: "{{ varnish_template_name + '.vcl.j2' }}"
     dest: "{{ varnish_vcl_dir }}/{{ varnish_template_name }}.vcl"

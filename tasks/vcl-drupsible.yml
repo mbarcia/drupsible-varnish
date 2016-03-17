@@ -1,7 +1,7 @@
 ---
 - name: Create backends include
   template:
-    src: "drupal/vcl_backend.j2"
+    src: "drupsible/vcl_backend.j2"
     dest: "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl"
   notify: 
     - Restart varnish
@@ -9,7 +9,7 @@
 - name: Insert backends for the app in main acl
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
-    insertafter: '#block-backends'
+    insertafter: '# block drupsible backend'
     marker: "# {mark} ANSIBLE MANAGED BLOCK BACKENDS {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-backend.vcl";
@@ -18,7 +18,7 @@
 
 - name: Create acl include
   template:
-    src: "drupal/vcl_acl.j2"
+    src: "drupsible/vcl_acl.j2"
     dest: "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl"
   notify: 
     - Restart varnish
@@ -26,7 +26,7 @@
 - name: Insert a block for the app in main acl
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
-    insertbefore: '#block-acl-end'
+    insertafter: '# block drupsible acl'
     marker: "# {mark} ANSIBLE MANAGED BLOCK ACL {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-acl.vcl";
@@ -35,7 +35,7 @@
 
 - name: Create init include
   template:
-    src: "drupal/vcl_init.j2"
+    src: "drupsible/vcl_init.j2"
     dest: "{{ varnish_vcl_dir }}/{{ app_name }}-init.vcl"
   notify: 
     - Restart varnish
@@ -43,7 +43,7 @@
 - name: Insert a block for the app in main vlc_init
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
-    insertbefore: '#block-init-end'
+    insertafter: '# block drupsible init'
     marker: "# {mark} ANSIBLE MANAGED BLOCK INIT {{ app_name }}"
     block: |
       include "{{ varnish_vcl_dir }}/{{ app_name }}-init.vcl";
@@ -52,7 +52,7 @@
 
 - name: Create recv include
   template:
-    src: "drupal/vcl_recv.j2"
+    src: "drupsible/vcl_recv.j2"
     dest: "{{ varnish_vcl_dir }}/{{ app_name }}-recv.vcl"
   notify: 
     - Restart varnish
@@ -60,7 +60,7 @@
 - name: Insert a block for the app in main vlc_recv
   blockinfile:
     dest: "{{ varnish_vcl_dir }}/drupsible.vcl"
-    insertbefore: '#block-recv-end'
+    insertafter: '# block drupsible recv'
     marker: "# {mark} ANSIBLE MANAGED BLOCK RECV {{ app_name }}"
     block: |
       if (req.http.Host ~ "{{ webdomain|default('') }}")

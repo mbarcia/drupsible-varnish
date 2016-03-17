@@ -7,24 +7,21 @@ import directors;
 # Import VMod's.
 import std;
 
-#block-backends
+# block drupsible backend
 
 sub vcl_init {
-
-#block-init-end
+# block drupsible init
 }
 
 # Define the internal network to access cron.php, install.php and purge with Ctrl-F5.
 acl internal {
-
-#block-acl-end
+# block drupsible acl
 }
 sub vcl_recv {
   if (! req.http.Host) {
     return (synth(404, "Need a host header in the HTTP request."));
   }
-
-#block-recv-end
+# block drupsible recv
 }
 
 sub vcl_hit {

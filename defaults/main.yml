@@ -276,4 +276,5 @@ varnish_ferm_dependent_rules:
   role: 'varnish'
   name: 'backend'
 
-varnish_apache2_servers: "{{ groups[ app_name + '-' + app_target + '_deploy' ] }}"
+varnish_apache2_servers: "localhost"
+varnish_app_name: 'default'

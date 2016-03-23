@@ -1,4 +1,4 @@
-    new {{ app_name }}_director = directors.round_robin();
+    new {{ varnish_app_name }}_director = directors.round_robin();
 {% for host in varnish_apache2_servers %}
-    {{ app_name }}_director.add_backend({{ app_name}}_{{ host | regex_replace('[-.]', '') }});
+    {{ varnish_app_name }}_director.add_backend({{ varnish_app_name}}_{{ host | regex_replace('[-.]', '') }});
 {% endfor %}

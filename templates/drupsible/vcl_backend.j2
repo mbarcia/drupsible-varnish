@@ -1,5 +1,5 @@
 {% for host in varnish_apache2_servers %}
-backend {{app_name}}_{{ host | regex_replace('[-.]', '') }} {
+backend {{varnish_app_name}}_{{ host | regex_replace('[-.]', '') }} {
   .host = "{{ hostvars[host].ansible_eth0.ipv4.address }}";
   .port = "{{ varnish_apache2_port }}";
   .connect_timeout = 30s;

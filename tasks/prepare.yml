@@ -19,10 +19,10 @@
   changed_when: no
 
 - name: Create/read secret local file
-  shell: echo {{ lookup('password', secret + '/credentials/' + varnish_app_name + '/varnish/secret chars=ascii_letters,digits,hexdigits') }}
+  shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }}
   register: secret_local
   changed_when: no
 
 - name: Copy secret key file if needed
-  shell: echo {{ lookup('password', secret + '/credentials/' + varnish_app_name + '/varnish/secret chars=ascii_letters,digits,hexdigits') }} > {{ varnish_management_console_secret_file }}
+  shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }} > {{ varnish_management_console_secret_file }}
   when: secret_remote is not defined or secret_local.stdout != secret_remote.stdout

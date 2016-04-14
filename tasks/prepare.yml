@@ -22,7 +22,9 @@
   shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }}
   register: secret_local
   changed_when: no
+  no_log: True
 
 - name: Copy secret key file if needed
   shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }} > {{ varnish_management_console_secret_file }}
   when: secret_remote is not defined or secret_local.stdout != secret_remote.stdout
+  no_log: True

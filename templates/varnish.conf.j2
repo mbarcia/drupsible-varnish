@@ -55,3 +55,7 @@ DAEMON_OPTS="-i {{varnish_identity}}\
  -p {{ key }}={{ value }}\
 {% endfor %}
 {% endif %}"
+
+LOG_OPTS="-n {{varnish_instance_name}}"
+
+NCSA_OPTS="-n {{varnish_instance_name}}"

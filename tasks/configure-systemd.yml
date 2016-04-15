@@ -1,29 +1,63 @@
 ---
-- name: Copy Varnish init script
-  command: "cp /lib/systemd/system/varnish.service /etc/systemd/system/varnish.service"
+- name: Copy Varnish init scripts
+  command: "cp /lib/systemd/system/{{ item }}.service /etc/systemd/system/{{ item }}.service"
   args:
-    creates: /etc/systemd/system/varnish.service
+    creates: "/etc/systemd/system/{{ item }}.service"
+  with_items:
+  - "varnish"
+  - "varnishlog"
+  - "varnishncsa"
+  notify:
+    - Reload systemd
 
 - name: Add env file from Varnish package
   lineinfile:
-    dest: /etc/systemd/system/varnish.service
+    dest: /etc/systemd/system/{{ item }}.service
     follow: yes
     insertafter: "^\\[Service\\]$"
     state: present
     line: "EnvironmentFile=/etc/default/varnish"
     backup: yes
+  with_items:
+  - "varnish"
+  - "varnishlog"
+  - "varnishncsa"
+  notify:
+    - Reload systemd
 
-- name: Replace stock command line
+- name: Replace varnish stock command line
   replace:
     dest: /etc/systemd/system/varnish.service
     follow: yes
     regexp: "^ExecStart=/usr/sbin/varnishd.*$"
     replace: "ExecStart=/usr/sbin/varnishd $DAEMON_OPTS"
+  notify:
+    - Reload systemd
+
+- name: Replace varnishlog stock command line
+  replace:
+    dest: /etc/systemd/system/varnish.service
+    follow: yes
+    regexp: "^ExecStart=/usr/bin/varnishlog.*$"
+    replace: "ExecStart=/usr/bin/varnishlog -a -w /var/log/varnish/varnish.log -D -P /run/varnishlog/varnishlog.pid $LOG_OPTS"
+  notify:
+    - Reload systemd
+
+- name: Replace varnishncsa stock command line
+  replace:
+    dest: /etc/systemd/system/varnishncsa.service
+    follow: yes
+    regexp: "^ExecStart=/usr/bin/varnishncsa.*$"
+    replace: "ExecStart=/usr/bin/varnishncsa -a -w /var/log/varnish/varnishncsa.log -D -P /run/varnishncsa/varnishncsa.pid $NCSA_OPTS"
+  notify:
+    - Reload systemd
 
 - name: Enable varnish at startup
   command: systemctl enable varnish
   args:
     creates: /etc/systemd/system/multi-user.target.wants/varnish.service
+  notify:
+    - Reload systemd
 
 - name: Configure Varnish
   template:

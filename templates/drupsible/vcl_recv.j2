@@ -1,10 +1,10 @@
 {% if varnish_trusted_hosts_enable|bool %}
   if (
-    req.http.host != "{{ app_webhost }}.{{ webdomain }}" && 
+    req.http.host != "{{ app_webhost }}.{{ varnish_webdomain }}" && 
 {% for trusted_host in varnish_trusted_hosts %}
     req.http.host != "{{ trusted_host }}" && 
 {% endfor %}
-    req.http.host !~ "(?i)^.*{{ webdomain|regex_replace('[.]', '\\.') }}$"
+    req.http.host !~ "(?i)^.*{{ varnish_webdomain|regex_replace('[.]', '\\.') }}$"
   ) {
     return (synth(418, "http://" + req.http.host + req.url));
   }
@@ -41,8 +41,8 @@
        return (pass);
   }
 
-  if (req.http.host == "{{ webdomain }}") {
-    set req.http.host = "{{ varnish_webhost }}.{{ webdomain }}";
+  if (req.http.host == "{{ varnish_webdomain }}") {
+    set req.http.host = "{{ varnish_webhost }}.{{ varnish_webdomain }}";
     if ( req.http.X-Forwarded-Proto !~ "(?i)https") {
       return (synth(750, "http://" + req.http.host + req.url));
     }

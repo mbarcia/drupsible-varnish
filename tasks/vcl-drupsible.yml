@@ -63,7 +63,7 @@
     insertafter: '# block drupsible recv'
     marker: "# {mark} ANSIBLE MANAGED BLOCK RECV {{ varnish_app_name }}"
     block: |
-      if (req.http.Host ~ "{{ webdomain|default('') }}")
+      if (req.http.Host ~ "{{ varnish_webdomain|default('') }}")
       {
         set req.backend_hint = {{ varnish_app_name }}_director.backend();
         include "{{ varnish_vcl_dir }}/{{ varnish_app_name }}-recv.vcl";

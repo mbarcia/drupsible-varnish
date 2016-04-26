@@ -18,9 +18,26 @@
     }
   }
 
+  # Only allow PURGE from acl internal
   if (req.method == "PURGE") {
-    return(purge);
+    if (!client.ip ~ internal) {
+      return (synth(405, "Not allowed."));
+    }
+    else {
+      return(purge);
+    }
   }
+
+  {% if varnish_cache_tag_header_request != "" %}
+  # Purge all the cache tags in the request
+  if (req.http.{{ varnish_cache_tag_header_request }}) {
+    if (xkey.purge(req.http.{{ varnish_cache_tag_header_request }}) != 0) {
+      return (synth(200, "Purged"));
+    } else {
+      return (synth(404, "Key not found"));
+    }
+  }
+  {% endif %}
 
   # Pipe these paths directly to Apache for streaming.
   if (req.url ~ "/(download|{% for path in varnish_regexp_pipe_paths %}{{ path }}|{% endfor %}export)$") {
@@ -78,11 +95,6 @@
   if (req.url ~ "^/(cron|install)\.php$" && !client.ip ~ internal) {
     # Use a custom error page that you've defined in Drupal at the path "404".
     set req.url = "/404";
-  }
-
-  # Only allow PURGE from acl internal
-  if (req.method == "PURGE" && !client.ip ~ internal) {
-    return (synth(405, "Not allowed."));
   }
 
   # Deliver the grace header (with a default value for now)

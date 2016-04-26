@@ -6,6 +6,8 @@ vcl 4.0;
 import directors;    
 # Import VMod's.
 import std;
+# Cache tags support
+import xkey;
 
 # block drupsible backend
 
@@ -84,8 +86,15 @@ sub vcl_deliver {
   else {
     set resp.http.X-Varnish-Cache = "MISS";
   }
-  
+
   set resp.http.grace = req.http.grace;
+
+  {% if varnish_cache_tag_header_forward_enabled|default(False)|bool %}
+    {% if varnish_cache_tag_header_forwarded != "" and varnish_cache_tag_header_request != "" %}
+  # Forward the backend cache tags to the client in a designated header in the response
+  set resp.http.{{ varnish_cache_tag_header_forwarded }} = resp.http.{{ varnish_cache_tag_header_request }};
+    {% endif %}
+  {% endif %}
 }
 
 sub vcl_pipe {

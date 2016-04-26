@@ -285,3 +285,15 @@ varnish_be_probe_timeout: "5s"
 varnish_be_probe_window: 5
 varnish_be_probe_threshold: 3
 varnish_be_probe_initial: 2
+
+#
+# Cache tags section
+#
+# Default is to process cache tags in the header added by the Purge drupal module.
+varnish_cache_tag_header_request: "Purge-Cache-Tag"
+
+# Default is to NOT forward the cache tag to the client.
+varnish_cache_tag_header_forward_enabled: no
+
+# Default is the Cloudflare header.
+varnish_cache_tag_header_forwarded: "Cache-Tag"

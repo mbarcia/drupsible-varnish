@@ -296,13 +296,20 @@ varnish_be_probe_initial: 2
 #
 # Default is to process cache tags in the header added by the Purge drupal module.
 varnish_cache_tag_header_request: "Purge-Cache-Tag"
-
 # Default is to NOT forward the cache tag to the client.
 varnish_cache_tag_header_forward_enabled: no
-
 # Default is the Cloudflare header.
 varnish_cache_tag_header_forwarded: "Cache-Tag"
-
 # Varnish modules (build from source)
 varnish_modules_release: "varnish-modules-0.9.0"
 varnish_build_dir: "/tmp"
+
+# Varnish dev flag, enable on your local
+varnish_development_enabled: no
+
+# Do you really need to cache static files that don't cause load? Only if you have memory left.
+varnish_cache_static_files_enabled: yes
+varnish_static_files_ext: "html|pdf|asc|dat|txt|doc|xls|ttf|ppt|woff|eot|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js"
+
+# List of large static files extentions (ie. videos)
+varnish_large_static_files_ext: "7z|avi|bz2|flac|flv|gz|mka|mkv|mov|mp3|mp4|mpeg|mpg|ogg|ogm|opus|rar|tar|tgz|tbz|txz|wav|webm|xz|zip"

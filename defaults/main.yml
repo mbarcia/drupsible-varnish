@@ -279,11 +279,16 @@ varnish_ferm_dependent_rules:
 varnish_apache2_servers: [ "localhost" ]
 varnish_app_name: 'default'
 
-# Backend probe default parameters
-varnish_be_probe_interval: "60s"
-varnish_be_probe_timeout: "5s"
-varnish_be_probe_window: 5
-varnish_be_probe_threshold: 3
+# Backend default parameters
+varnish_be_connect_timeout: 30s
+varnish_be_first_byte_timeout: 60s
+varnish_be_between_bytes_timeout: 20s
+varnish_be_max_connections: 300
+# Probe default parameters
+varnish_be_probe_interval: 5s
+varnish_be_probe_timeout: 1s
+varnish_be_probe_window: 3
+varnish_be_probe_threshold: 2
 varnish_be_probe_initial: 2
 
 #

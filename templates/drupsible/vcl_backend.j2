@@ -6,11 +6,11 @@ backend {{varnish_app_name}}_{{ host | regex_replace('[-.]', '') }} {
   .first_byte_timeout = {{ varnish_be_first_byte_timeout }};
   .between_bytes_timeout = {{ varnish_be_between_bytes_timeout }};
   .max_connections = {{ varnish_be_max_connections }};
-  {% if varnish_app_webhost|default('') != '' and varnish_app_webdomain|default('') != '' %}
+  {% if varnish_webhost|default('') != '' and varnish_webdomain|default('') != '' %}
   .probe = {
     .request =
       "HEAD {{ varnish_fpm_ping_path }} HTTP/1.1"
-      "Host: {{ varnish_app_webhost }}.{{ varnish_app_webdomain }}"
+      "Host: {{ varnish_webhost }}.{{ varnish_webdomain }}"
       "Connection: close"
       "User-Agent: Varnish Health Probe";
     .interval = {{ varnish_be_probe_interval }};

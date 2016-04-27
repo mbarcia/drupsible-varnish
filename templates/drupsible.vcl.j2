@@ -90,15 +90,25 @@ sub vcl_deliver {
   set resp.http.grace = req.http.grace;
 
   {% if varnish_cache_tag_header_forward_enabled|default(False)|bool %}
-    {% if varnish_cache_tag_header_forwarded != "" and varnish_cache_tag_header_request != "" %}
+    {% if varnish_cache_tag_header_forwarded != varnish_cache_tag_header_request %}
   # Forward the backend cache tags to the client in a designated header in the response
-  set resp.http.{{ varnish_cache_tag_header_forwarded }} = resp.http.{{ varnish_cache_tag_header_request }};
+  set resp.http.{{ varnish_cache_tag_header_forwarded|default('Cache-Tags') }} = resp.http.{{ varnish_cache_tag_header_requestdefault('Purge-Cache-Tags') }};
+  unset resp.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }};
     {% endif %}
   {% endif %}
 }
 
 sub vcl_pipe {
   set bereq.http.connection = "close";
+}
+
+sub vcl_purge {
+  # Only handle actual PURGE HTTP methods, everything else is discarded
+  if (req.method != "PURGE") {
+    # restart request
+    set req.http.X-Purge = "Yes";
+    return(restart);
+  }
 }
 
 sub vcl_backend_error {

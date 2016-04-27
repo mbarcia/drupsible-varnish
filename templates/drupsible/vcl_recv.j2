@@ -10,34 +10,23 @@
   }
 {% endif %}
 
-  if(std.healthy(req.backend_hint)) {
-    if (req.http.pragma ~ "no-cache" || req.http.Cache-Control ~ "no-cache") {
-      if (client.ip ~ internal) {
-        return (purge);
-      }
-    }
-  }
-
-  # Only allow PURGE from acl internal
+  # Allow purging
   if (req.method == "PURGE") {
     if (!client.ip ~ internal) {
-      return (synth(405, "Not allowed."));
+      # Not from an allowed IP? Then die with an error.
+      return (synth(405, "This IP is not allowed to send PURGE requests."));
     }
-    else {
-      return(purge);
+    if (req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) {
+      # Purge all the cache tags in the PURGE request
+      if (xkey.purge(req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) != 0) {
+        return (synth(200, "Purged"));
+      } else {
+        return (synth(404, "Key not found"));
+      }
     }
+    # If you got this stage (and didn't error out above), purge the cached result
+    return(purge);
   }
-
-  {% if varnish_cache_tag_header_request != "" %}
-  # Purge all the cache tags in the request
-  if (req.http.{{ varnish_cache_tag_header_request }}) {
-    if (xkey.purge(req.http.{{ varnish_cache_tag_header_request }}) != 0) {
-      return (synth(200, "Purged"));
-    } else {
-      return (synth(404, "Key not found"));
-    }
-  }
-  {% endif %}
 
   # Pipe these paths directly to Apache for streaming.
   if (req.url ~ "/(download|{% for path in varnish_regexp_pipe_paths %}{{ path }}|{% endfor %}export)$") {
@@ -174,5 +163,17 @@
       # std.syslog(0, req.http.Cookie);
       return (pass);
     }
+  }
 
+  if(std.healthy(req.backend_hint)) {
+    if (req.http.pragma ~ "(?i)no-cache" || req.http.Cache-Control ~ "(?i)no-cache") {
+      if (client.ip ~ internal) {
+        # http://varnish.projects.linpro.no/wiki/VCLExampleEnableForceRefresh
+        # Ignore requests via proxy caches and badly behaved crawlers
+        # like msnbot that send no-cache with every request.
+        if (! (req.http.Via || req.http.User-Agent ~ "(?i)bot" || req.http.X-Purge)) {
+          return (purge); # Couple this with restart in vcl_purge and X-Purge header to avoid loops
+        }
+      }
+    }
   }

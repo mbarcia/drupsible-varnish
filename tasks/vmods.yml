@@ -16,41 +16,6 @@
   - python-docutils 
   - python-sphinx
 
-- name: Register Varnish release
-  shell: "varnishd -V 2>&1 >/dev/null | grep revision | cut -c 11-23"
-  register: varnish_release
-  changed_when: False
-
-- name: Download Varnish sources archive
-  get_url:
-    url: "https://github.com/varnishcache/varnish-cache/archive/{{ varnish_release.stdout }}.zip"
-    dest: "{{ varnish_build_dir }}/{{ varnish_release.stdout }}.zip"
-
-- name: Decompress Varnish sources archive
-  unarchive:
-    src: "{{ varnish_build_dir }}/{{ varnish_release.stdout }}.zip"
-    dest: "{{ varnish_build_dir }}/"
-    creates: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}/autogen.sh"
-  delegate_to: "{{ inventory_hostname }}"
-
-- name: Run autogen.sh to create a configure
-  shell: "./autogen.sh"
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}"
-    creates: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}/configure"
-
-- name: Run configure to create a Makefile
-  shell: "./configure"
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}"
-    creates: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}/Makefile"
-
-- name: Run make
-  command: make
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}"
-    creates: "{{ varnish_build_dir }}/varnish-cache-{{ varnish_release.stdout }}/lib/Makefile"
-
 - name: Download Varnish modules sources archive
   get_url:
     url: "https://github.com/varnish/varnish-modules/archive/{{ varnish_modules_release }}.zip"
@@ -80,3 +45,5 @@
   args:
     chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
     creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
+  notify: 
+    - Restart varnish

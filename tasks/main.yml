@@ -18,6 +18,8 @@
 - include: configure.yml
   when: ansible_distribution_release != 'jessie' and ansible_distribution_release != 'vivid'
 
+- include: vmods.yml
+
 - include: vcl.yml
 
 - include: vcl-drupsible.yml

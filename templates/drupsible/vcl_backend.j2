@@ -2,17 +2,23 @@
 backend {{varnish_app_name}}_{{ host | regex_replace('[-.]', '') }} {
   .host = "{{ hostvars[host].ansible_eth0.ipv4.address }}";
   .port = "{{ varnish_apache2_port }}";
-  .connect_timeout = 30s;
-  .first_byte_timeout = 60s;
-  .between_bytes_timeout = 20s;
-  .max_connections = 150;
+  .connect_timeout = {{ varnish_be_connect_timeout }};
+  .first_byte_timeout = {{ varnish_be_first_byte_timeout }};
+  .between_bytes_timeout = {{ varnish_be_between_bytes_timeout }};
+  .max_connections = {{ varnish_be_max_connections }};
+  {% if varnish_webhost|default('') != '' and varnish_webdomain|default('') != '' %}
   .probe = {
-         .url = "{{ varnish_fpm_ping_path }}";
-         .interval = {{ varnish_be_probe_interval }};
-         .timeout = {{ varnish_be_probe_timeout }};
-         .window = {{ varnish_be_probe_window }};
-         .threshold = {{ varnish_be_probe_threshold }};
-         .initial = {{ varnish_be_probe_initial }};
-   }
+    .request =
+      "HEAD {{ varnish_fpm_ping_path }} HTTP/1.1"
+      "Host: {{ varnish_webhost }}.{{ varnish_webdomain }}"
+      "Connection: close"
+      "User-Agent: Varnish Health Probe";
+    .interval = {{ varnish_be_probe_interval }};
+    .timeout = {{ varnish_be_probe_timeout }};
+    .window = {{ varnish_be_probe_window }};
+    .threshold = {{ varnish_be_probe_threshold }};
+    .initial = {{ varnish_be_probe_initial }};
+  }
+  {% endif %}
 }
 {% endfor %}

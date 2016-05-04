@@ -1,25 +1,65 @@
+  # Called at the beginning of a request, after the complete request has been received and parsed.
+  # Its purpose is to decide whether or not to serve the request, how to do it, and, if applicable,
+  # which backend to use.
+  # also used to modify the request
+
+  # Normalize the header, remove the port (in case you're testing this on various TCP ports)
+  set req.http.Host = regsub(req.http.Host, ":[0-9]+", "");
+
+  # Normalize the query arguments
+  set req.url = std.querysort(req.url);
+
 {% if varnish_trusted_hosts_enable|bool %}
   if (
-    req.http.host != "{{ app_webhost }}.{{ varnish_webdomain }}" && 
+    req.http.Host != "{{ app_webhost }}.{{ varnish_webdomain }}" && 
 {% for trusted_host in varnish_trusted_hosts %}
-    req.http.host != "{{ trusted_host }}" && 
+    req.http.Host != "{{ trusted_host }}" && 
 {% endfor %}
-    req.http.host !~ "(?i)^.*{{ varnish_webdomain|regex_replace('[.]', '\\.') }}$"
+    req.http.Host !~ "(?i)^.*{{ varnish_webdomain|regex_replace('[.]', '\\.') }}$"
   ) {
-    return (synth(418, "http://" + req.http.host + req.url));
+    return (synth(418, "http://" + req.http.Host + req.url));
   }
 {% endif %}
 
-  if(std.healthy(req.backend_hint)) {
-    if (req.http.pragma ~ "no-cache" || req.http.Cache-Control ~ "no-cache") {
-      if (client.ip ~ internal) {
-        return (purge);
+  # Allow purging
+  if (req.method == "PURGE") {
+    if (!client.ip ~ internal) {
+      # Not from an allowed IP? Then die with an error.
+      return (synth(405, "This IP is not allowed to send PURGE requests."));
+    }
+    if (req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) {
+      # Purge all the cache tags in the PURGE request
+      if (xkey.purge(req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) != 0) {
+        return (synth(200, "Purged"));
+      } else {
+        return (synth(404, "Key not found"));
       }
     }
+    # If you got this stage (and didn't error out above), purge the cached result
+    return(purge);
   }
 
-  if (req.method == "PURGE") {
-    return(purge);
+  # Only deal with "normal" types
+  if (req.method != "GET" &&
+      req.method != "HEAD" &&
+      req.method != "PUT" &&
+      req.method != "POST" &&
+      req.method != "TRACE" &&
+      req.method != "OPTIONS" &&
+      req.method != "PATCH" &&
+      req.method != "DELETE") {
+    /* Non-RFC2616 or CONNECT which is weird. */
+    return (pipe);
+  }
+
+  # Strip hash, server doesn't need it.
+  if (req.url ~ "\#") {
+    set req.url = regsub(req.url, "\#.*$", "");
+  }
+
+  # Strip a trailing ? if it exists
+  if (req.url ~ "\?$") {
+    set req.url = regsub(req.url, "\?$", "");
   }
 
   # Pipe these paths directly to Apache for streaming.
@@ -41,32 +81,48 @@
        return (pass);
   }
 
-  if (req.http.host == "{{ varnish_webdomain }}") {
-    set req.http.host = "{{ varnish_webhost }}.{{ varnish_webdomain }}";
+  # Implementing websocket support (https://www.varnish-cache.org/docs/4.0/users-guide/vcl-example-websockets.html)
+  if (req.http.Upgrade ~ "(?i)websocket") {
+    return (pipe);
+  }
+
+  # Only cache GET or HEAD requests. This makes sure the POST requests are always passed.
+  if (req.method != "GET" && req.method != "HEAD") {
+    return (pass);
+  }
+
+  # Trusted host pattern defense
+  if (req.http.Host == "{{ varnish_webdomain }}") {
+    set req.http.Host = "{{ varnish_webhost }}.{{ varnish_webdomain }}";
     if ( req.http.X-Forwarded-Proto !~ "(?i)https") {
-      return (synth(750, "http://" + req.http.host + req.url));
+      return (synth(750, "http://" + req.http.Host + req.url));
     }
     else {
-      return (synth(750, "https://" + req.http.host + req.url));
+      return (synth(750, "https://" + req.http.Host + req.url));
     }
   }
 
-  # Always cache the following file types for all users. This list of extensions
-  # appears twice, once here and again in vcl_fetch so make sure you edit both
-  # and keep them equal.
-  if (req.url ~ "(?i)\.(html|pdf|asc|dat|txt|doc|xls|ttf|ppt|woff|eot|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
+  # Large static files are delivered directly to the end-user without
+  # waiting for Varnish to fully read the file first.
+  # Varnish 4 fully supports Streaming, so set do_stream in vcl_backend_response()
+  if (req.url ~ "^[^?]*\.({{ varnish_large_static_files_ext }})(\?.*)?$") {
+    unset req.http.Cookie;
+    return (hash);
+  }
+
+{% if varnish_cache_static_files_enabled|default(False)|bool %}
+  # Remove all cookies for static files, thus forcing them to be cached.
+  # This list of extensions appears twice, once here and again in vcl_backend_response. 
+  # So, make sure you edit both and keep them equal.
+  if (req.url ~ "(?i)\.({{ varnish_static_files_ext }})(\?.*)?$") {
     unset req.http.Cookie;
     return(hash);
   }
+{% endif %}
 
   # Use anonymous, cached pages if all backends are down.
   if (!std.healthy(req.backend_hint)) {
     unset req.http.Cookie;
-  }
-
-  # Ignore all "POST" requests - nothing cacheable there
-  if (req.method == "POST") {
-    return (pass);
   }
 
   # Do not cache the user paths either
@@ -78,11 +134,6 @@
   if (req.url ~ "^/(cron|install)\.php$" && !client.ip ~ internal) {
     # Use a custom error page that you've defined in Drupal at the path "404".
     set req.url = "/404";
-  }
-
-  # Only allow PURGE from acl internal
-  if (req.method == "PURGE" && !client.ip ~ internal) {
-    return (synth(405, "Not allowed."));
   }
 
   # Deliver the grace header (with a default value for now)
@@ -124,11 +175,13 @@
     return (pass);
   }
 
+{% if varnish_cache_static_files_enabled|default(False)|bool %}
   # Force cache here.
   if (req.url ~ "^/sites/default/files/.*$") {
     unset req.http.Cookie;
     return(hash);
   }
+{% endif %}
 
   # Remove all cookies that Drupal doesn't need to know about. We explicitly
   # list the ones that Drupal does need, the SESS and NO_CACHE. If, after
@@ -162,5 +215,27 @@
       # std.syslog(0, req.http.Cookie);
       return (pass);
     }
-
   }
+
+  if(std.healthy(req.backend_hint)) {
+    if (req.http.pragma ~ "(?i)no-cache" || req.http.Cache-Control ~ "(?i)no-cache") {
+      if (client.ip ~ internal) {
+        # http://varnish.projects.linpro.no/wiki/VCLExampleEnableForceRefresh
+        # Ignore requests via proxy caches and badly behaved crawlers
+        # like msnbot that send no-cache with every request.
+        if (! (req.http.Via || req.http.User-Agent ~ "(?i)bot" || req.http.X-Purge)) {
+          return (purge); # Couple this with restart in vcl_purge and X-Purge header to avoid loops
+        }
+      }
+    }
+  }
+
+  # Send Surrogate-Capability headers to announce ESI support to backend
+  set req.http.Surrogate-Capability = "key=ESI/1.0";
+
+  if (req.http.Authorization) {
+    # Not cacheable by default
+    return (pass);
+  }
+
+  return (hash);

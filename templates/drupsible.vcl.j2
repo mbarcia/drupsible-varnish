@@ -6,6 +6,8 @@ vcl 4.0;
 import directors;    
 # Import VMod's.
 import std;
+# Cache tags support
+import xkey;
 
 # block drupsible backend
 
@@ -17,6 +19,7 @@ sub vcl_init {
 acl internal {
 # block drupsible acl
 }
+
 sub vcl_recv {
   if (! req.http.Host) {
     return (synth(404, "Need a host header in the HTTP request."));
@@ -24,11 +27,33 @@ sub vcl_recv {
 # block drupsible recv
 }
 
+# The data on which the hashing will take place
+sub vcl_hash {
+  # Called after vcl_recv to create a hash value for the request. This is used as a key
+  # to look up the object in Varnish.
+
+  hash_data(req.url);
+
+  if (req.http.Host) {
+    hash_data(req.http.Host);
+  } else {
+    hash_data(server.ip);
+  }
+
+  # hash cookies for requests that have them
+  if (req.http.Cookie) {
+    hash_data(req.http.Cookie);
+  }
+}
+
 sub vcl_hit {
+  # Called when a cache lookup is successful.
+  
   if (obj.ttl >= 0s) {
-    # normal hit
+    # A pure unadultered hit, deliver it
     return (deliver);
   }
+
   # We have no fresh fish. Lets look at the stale ones.
   if (std.healthy(req.backend_hint)) {
     # Backend is healthy. Limit age to 10s.
@@ -49,47 +74,139 @@ sub vcl_hit {
       return (fetch);
     }
   }
+
+  # fetch & deliver once we get the result
+  return (fetch); # Dead code, keep as a safeguard
 }
 
-# Code determining what to do when serving items from the Apache servers.
-# beresp == Back-end response from the web server.
 sub vcl_backend_response {
-  # Allow items to be stale if needed
-  set beresp.ttl = 10s;
-  set beresp.grace = 1h;
+  # Called after the response headers has been successfully retrieved from the backend.
 
-  # Don't allow static files to set cookies.
+  # Pause ESI request and remove Surrogate-Control header
+  if (beresp.http.Surrogate-Control ~ "ESI/1.0") {
+    unset beresp.http.Surrogate-Control;
+    set beresp.do_esi = true;
+  }
+
+  # Large static files are delivered directly to the end-user without
+  # waiting for Varnish to fully read the file first.
+  # Varnish 4 fully supports Streaming, so use streaming here to avoid locking.
+  if (bereq.url ~ "^[^?]*\.({{ varnish_large_static_files_ext }})(\?.*)?$") {
+    unset beresp.http.set-cookie;
+    set beresp.do_stream = true;  # Check memory usage it'll grow in fetch_chunksize blocks (128k by default) if the backend doesn't send a Content-Length header, so only enable it for big objects
+    set beresp.do_gzip   = false;   # Don't try to compress it for storage
+  }
+
+  # Set 2min cache if unset for static files
+  if (beresp.ttl <= 0s || beresp.http.Set-Cookie || beresp.http.Vary == "*") {
+    set beresp.ttl = 120s; # Important, you shouldnt rely on this, SET YOUR HEADERS in the backend
+    set beresp.uncacheable = true;
+    return (deliver);
+  }
+
+{% if varnish_cache_static_files_enabled|default(False)|bool %}
+  # Do not allow static files to set cookies.
   # (?i) denotes case insensitive in PCRE (perl compatible regular expressions).
   # This list of extensions appears twice, once here and again in vcl_recv so
   # make sure you edit both and keep them equal.
-  if (bereq.url ~ "(?i)\.(html|pdf|asc|dat|txt|doc|xls|ttf|ppt|woff|eot|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
+  if (bereq.url ~ "(?i)\.({{ varnish_static_files_ext }})(\?.*)?$") {
     unset beresp.http.set-cookie;
   }
+{% endif %}
 
-  # We need this to cache 404s, 301s, 500s. Otherwise, depending on backend but
-  # definitely in Drupal's case these responses are not cacheable by default.
-  if (beresp.status == 404 || beresp.status == 301 || beresp.status == 500) {
-    # Cache responses for 2 minutes
-    set beresp.http.Cache-Control = "max-age=120";
-    set beresp.ttl = 120s;
-    set beresp.grace = 120s;
+  # We need to cache 404s and 301s. Otherwise, depending on backend but 
+  # definitely in Drupal case these responses are not cacheable by default.
+  if (beresp.status == 404 || beresp.status == 301) {
+    if (beresp.ttl <= 0s) {
+      # Cache responses for 2 minutes
+      set beresp.http.Cache-Control = "max-age=120";
+      set beresp.ttl = 120s;
+      set beresp.grace = 120s;
+    }
   }
+
+  # Do not cache 50x responses
+  if (beresp.status == 500 || beresp.status == 502 || beresp.status == 503 || beresp.status == 504) {
+    return (abandon);
+  }
+
+  # Allow stale content in case the backend goes down.
+  # Make Varnish keep all objects for 6 hours beyond their TTL
+  set beresp.grace = 6h;
+
+  return (deliver);
 }
 
-# Set a header to track a cache HIT/MISS.
+# The routine when we deliver the HTTP request to the user
+# Last chance to modify headers that are sent to the client
 sub vcl_deliver {
+  # Called before a cached object is delivered to the client.
+
+{% if varnish_development_enabled|default(False)|bool %}
   if (obj.hits > 0) {
     set resp.http.X-Varnish-Cache = "HIT";
   }
   else {
     set resp.http.X-Varnish-Cache = "MISS";
   }
-  
+
+  # Please note that obj.hits behaviour changed in 4.0, now it counts per objecthead, not per object
+  # and obj.hits may not be reset in some cases where bans are in use. See bug 1492 for details.
+  # So take hits with a grain of salt
+  set resp.http.X-Cache-Hits = obj.hits;
+{% endif %}
+
+{% if not varnish_development_enabled|default(False)|bool %}
+  # Remove some headers
+  unset resp.http.X-Powered-By; # PHP version
+  unset resp.http.Server; # Apache version & OS
+  unset resp.http.X-Drupal-Cache;
+  unset resp.http.X-Varnish;
+  unset resp.http.Via;
+  unset resp.http.Link;
+  unset resp.http.X-Generator;
+{% endif %}
+
   set resp.http.grace = req.http.grace;
+
+{% if varnish_cache_tag_header_forward_enabled|default(False)|bool %}
+  {% if varnish_cache_tag_header_forwarded != varnish_cache_tag_header_request %}
+  # Forward the backend cache tags to the client in a designated header in the response
+  set resp.http.{{ varnish_cache_tag_header_forwarded|default('Cache-Tags') }} = resp.http.{{ varnish_cache_tag_header_requestdefault('Purge-Cache-Tags') }};
+  unset resp.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }};
+  {% endif %}
+{% endif %}
+
+  return (deliver);
 }
 
 sub vcl_pipe {
-  set bereq.http.connection = "close";
+  # Called upon entering pipe mode.
+  # In this mode, the request is passed on to the backend, and any further data from both the client
+  # and backend is passed on unaltered until either end closes the connection. Basically, Varnish will
+  # degrade into a simple TCP proxy, shuffling bytes back and forth. For a connection in pipe mode,
+  # no other VCL subroutine will ever get called after vcl_pipe.
+
+  # Note that only the first request to the backend will have
+  # X-Forwarded-For set. If you use X-Forwarded-For and want to
+  # have it set for all requests, make sure to have this:
+  set bereq.http.Connection = "Close";
+
+  # Implementing websocket support (https://www.varnish-cache.org/docs/4.0/users-guide/vcl-example-websockets.html)
+  if (req.http.upgrade) {
+    set bereq.http.upgrade = req.http.upgrade;
+  }
+
+  return (pipe);
+}
+
+sub vcl_purge {
+  # Only handle actual PURGE HTTP methods, everything else is discarded
+  if (req.method != "PURGE") {
+    # restart request
+    set req.http.X-Purge = "Yes";
+    return(restart);
+  }
 }
 
 sub vcl_backend_error {
@@ -114,4 +231,19 @@ sub vcl_synth {
 {{ varnish_maintenance_page_synth_markup }}
 "} );
     return (deliver);
+}
+
+sub vcl_miss {
+  # Called after a cache lookup if the requested document was not found in the cache. Its purpose
+  # is to decide whether or not to attempt to retrieve the document from the backend, and which
+  # backend to use.
+
+  return (fetch);
+}
+
+sub vcl_fini {
+  # Called when VCL is discarded only after all requests have exited the VCL.
+  # Typically used to clean up VMODs.
+
+  return (ok);
 }

@@ -12,6 +12,7 @@
   - libncurses-dev 
   - libpcre3-dev 
   - libtool 
+  - libvarnishapi-dev
   - pkg-config 
   - python-docutils 
   - python-sphinx

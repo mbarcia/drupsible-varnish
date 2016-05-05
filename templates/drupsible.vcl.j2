@@ -44,6 +44,15 @@ sub vcl_hash {
   if (req.http.Cookie) {
     hash_data(req.http.Cookie);
   }
+
+  # Use another key (the contents of the proto header) for hashing https content
+  # X-Forwarded-Proto is set to https by the SSL terminator in front (ie. Pound)
+  if (req.http.X-Forwarded-Proto ~ "https") {
+    hash_data(req.http.X-Forwarded-Proto);
+  }
+
+  # Avoid adding more hash keys coming from the default VCL 
+  return (lookup);
 }
 
 sub vcl_hit {

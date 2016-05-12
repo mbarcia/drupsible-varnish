@@ -11,9 +11,9 @@
 
 {% if varnish_trusted_hosts_enable|bool %}
   if (
-    req.http.Host != "{{ app_webhost }}.{{ varnish_webdomain }}" && 
+    req.http.Host != "{{ app_webhost }}.{{ varnish_webdomain }}" &&
 {% for trusted_host in varnish_trusted_hosts %}
-    req.http.Host != "{{ trusted_host }}" && 
+    req.http.Host != "{{ trusted_host }}" &&
 {% endfor %}
     req.http.Host !~ "(?i)^.*{{ varnish_webdomain|regex_replace('[.]', '\\.') }}$"
   ) {
@@ -112,7 +112,7 @@
 
 {% if varnish_cache_static_files_enabled|default(False)|bool %}
   # Remove all cookies for static files, thus forcing them to be cached.
-  # This list of extensions appears twice, once here and again in vcl_backend_response. 
+  # This list of extensions appears twice, once here and again in vcl_backend_response.
   # So, make sure you edit both and keep them equal.
   if (req.url ~ "(?i)\.({{ varnish_static_files_ext }})(\?.*)?$") {
     unset req.http.Cookie;
@@ -138,15 +138,6 @@
 
   # Deliver the grace header (with a default value for now)
   set req.http.grace = "none";
-     
-  if (req.restarts == 0) {
-    if (req.http.x-forwarded-for) {
-      set req.http.X-Forwarded-For =
-      req.http.X-Forwarded-For + ", " + client.ip;
-    } else {
-      set req.http.X-Forwarded-For = client.ip;
-    }
-  }
 
   # Handle compression correctly. Different browsers send different
   # "Accept-Encoding" headers, even though they mostly all support the same

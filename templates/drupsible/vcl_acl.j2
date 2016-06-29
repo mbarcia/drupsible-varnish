@@ -1,6 +1,4 @@
-{% for allowed_host in varnish_allow_group_ip_addr.replace('\n', '').split(',') %}
-        "{{ allowed_host }}";
-{% endfor %}
 {% for allowed_host in varnish_allowed_hosts %}
         "{{ allowed_host }}";
 {% endfor %}
+

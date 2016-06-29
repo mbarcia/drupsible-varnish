@@ -2,9 +2,11 @@
 # This is a list of IP addresses from the deploy servers allowed to connect to
 # Varnish server.
 varnish_allow_group_ip_addr: |
-  {% for group in varnish_allow_groups %}
   {% set comma = joiner(",") %}
-  {% for host in groups[group] -%}
-    {{ comma() }}{{ hostvars[host].ansible_default_ipv4.address }}
+  {% for group in varnish_allow_groups %}
+  {% for host in groups[group] %}
+  {% for ip_addr in hostvars[host].ansible_all_ipv4_addresses -%}
+  {{ comma() }}{{ ip_addr }}
   {%- endfor %}
+  {% endfor %}
   {% endfor %}

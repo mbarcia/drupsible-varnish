@@ -5,16 +5,16 @@
     name: "{{ item }}"
     state: present
   with_items:
-  - automake 
-  - autotools-dev 
-  - libedit-dev 
-  - libjemalloc-dev 
-  - libncurses-dev 
-  - libpcre3-dev 
-  - libtool 
+  - automake
+  - autotools-dev
+  - libedit-dev
+  - libjemalloc-dev
+  - libncurses-dev
+  - libpcre3-dev
+  - libtool
   - libvarnishapi-dev
-  - pkg-config 
-  - python-docutils 
+  - pkg-config
+  - python-docutils
   - python-sphinx
 
 - name: Download Varnish modules sources archive
@@ -27,7 +27,7 @@
     src: "{{ varnish_build_dir }}/{{ varnish_modules_release }}.zip"
     dest: "{{ varnish_build_dir }}/"
     creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/bootstrap"
-  delegate_to: "{{ inventory_hostname }}"
+    copy: no
 
 - name: Run bootstrap to generate configure
   shell: "./bootstrap"
@@ -46,5 +46,5 @@
   args:
     chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
     creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
-  notify: 
+  notify:
     - Restart varnish

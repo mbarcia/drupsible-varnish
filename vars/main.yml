@@ -10,11 +10,3 @@ varnish_allow_group_ip_addr: |
   {%- endfor %}
   {% endfor %}
   {% endfor %}
-
-varnish_apache2_servers: |
-  {% set comma = joiner(",") %}
-  {% for group in varnish_allow_groups %}
-  {% for host in groups[group] -%}
-  {{ comma() }}{{ host }}
-  {%- endfor %}
-  {% endfor %}

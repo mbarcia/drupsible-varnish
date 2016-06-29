@@ -246,11 +246,8 @@ varnish_maintenance_page_synth_markup: |
     </body>
   </html>
 
-# Inventory groups of backend servers which are allowed to connect to Varnish, ie. webservers
-varnish_allow_groups: 'all'
-
-# List of IP addresses to be granted access to purge, cron.php and install.php
-# (other than localhost and Vagrant host). This also grants console/terminal
+# List of IP addresses to be granted access to purge, cron.php and install.php 
+# (other than localhost and Vagrant host). This also grants console/terminal 
 # access.
 varnish_allowed_hosts: []
 
@@ -259,11 +256,11 @@ varnish_regexp_pipe_paths: [ 'admin.*' ]
 
 varnish_ferm_dependent_rules:
 - type: 'accept'
-  dport: [
-    "{{ varnish_http_server_listen_on|default(http) }}",
+  dport: [ 
+    "{{ varnish_http_server_listen_on|default(http) }}", 
     "{{ varnish_management_console_listen_on|default(6082) }}"
   ]
-  saddr: "{{ varnish_allow_group_ip_addr.replace('\n', '').split(',') + varnish_allowed_hosts }}"
+  saddr: "{{ varnish_allowed_hosts }}"
   accept_any: True
   weight: '10'
   role: 'varnish'
@@ -271,7 +268,7 @@ varnish_ferm_dependent_rules:
   multiport: True
 - type: 'accept'
   chain: 'OUTPUT'
-  dport: [
+  dport: [ 
     "{{ varnish_backend|default(8080) }}"
   ]
   accept_any: True
@@ -279,6 +276,7 @@ varnish_ferm_dependent_rules:
   role: 'varnish'
   name: 'backend'
 
+varnish_apache2_servers: [ "localhost" ]
 varnish_app_name: 'default'
 
 # Backend default parameters

@@ -1,6 +1,6 @@
-{% for host in varnish_apache2_servers.replace('\n', '').split(',') %}
+{% for host in varnish_apache2_servers %}
 backend {{varnish_app_name}}_{{ host | regex_replace('[-.]', '') }} {
-  .host = "{{ host }}";
+  .host = "{{ hostvars[host].ansible_eth0.ipv4.address }}";
   .port = "{{ varnish_apache2_port }}";
   .connect_timeout = {{ varnish_be_connect_timeout }};
   .first_byte_timeout = {{ varnish_be_first_byte_timeout }};

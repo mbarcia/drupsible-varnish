@@ -1,6 +1,7 @@
-{% for allowed_host in varnish_allow_group_ip_addr.replace('\n', '').split(',') %}
-        "{{ allowed_host }}";
+{% for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
+{% set net_mask = allowed_ip + '/255.255.255.0' %}
+        "{{ net_mask | ipaddr('subnet') }}";
 {% endfor %}
-{% for allowed_host in varnish_allowed_hosts %}
-        "{{ allowed_host }}";
+{% for allowed_ip in varnish_allowed_hosts %}
+        "{{ allowed_ip }}";
 {% endfor %}

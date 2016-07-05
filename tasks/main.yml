@@ -1,4 +1,13 @@
 ---
+- name: Gather facts of designated backend servers
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_items: "{{ groups[varnish_deploy_group] }}"
+
+- set_fact:
+    varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
+
 - include: apt-repo.yml
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 

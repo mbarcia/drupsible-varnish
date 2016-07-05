@@ -1,0 +1,12 @@
+---
+# This is a list of IP addresses from the deploy servers allowed to connect to
+# Varnish server.
+varnish_deploy_group_ip_addr: |
+  {% set comma = joiner(",") %}
+  {% for host in groups[varnish_deploy_group] %}
+  {% for ip_addr in hostvars[host].ansible_all_ipv4_addresses -%}
+  {{ comma() }}{{ ip_addr }}
+  {%- endfor %}
+  {% endfor %}
+
+varnish_deploy_group_ip_addr_list: "{{ varnish_deploy_group_ip_addr.replace('\n', '').split(',') }}"

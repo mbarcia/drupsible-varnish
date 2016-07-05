@@ -1,4 +1,4 @@
     new {{ varnish_app_name }}_director = directors.round_robin();
-{% for host in varnish_apache2_servers.replace('\n', '').split(',') %}
+{% for host in groups[varnish_deploy_group] %}
     {{ varnish_app_name }}_director.add_backend({{ varnish_app_name}}_{{ host | regex_replace('[-.]', '') }});
 {% endfor %}

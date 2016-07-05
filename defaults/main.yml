@@ -246,38 +246,47 @@ varnish_maintenance_page_synth_markup: |
     </body>
   </html>
 
-# Inventory groups of backend servers which are allowed to connect to Varnish, ie. webservers
-varnish_allow_groups: 'all'
+# Inventory group of backend servers
+varnish_deploy_group: ''
 
-# List of IP addresses to be granted access to purge, cron.php and install.php
-# (other than localhost and Vagrant host). This also grants console/terminal
-# access.
+# List of IP addresses or CIDR networks to be granted access to purge,
+# cron.php and install.php other than servers in varnish_deploy_group.
+# Servers here are also granted console/terminal access.
 varnish_allowed_hosts: []
+
+# List of IP addresses or CIDR networks to be granted access to port 80.
+# If there are no entries, Varnish will accept connections from any IP address
+# or network.
+varnish_allowed_hosts_http: []
 
 varnish_trusted_hosts_enable: True
 varnish_regexp_pipe_paths: [ 'admin.*' ]
 
 varnish_ferm_dependent_rules:
 - type: 'accept'
-  dport: [
-    "{{ varnish_http_server_listen_on|default(http) }}",
-    "{{ varnish_management_console_listen_on|default(6082) }}"
-  ]
-  saddr: "{{ varnish_allow_group_ip_addr.replace('\n', '').split(',') + varnish_allowed_hosts }}"
+  dport: [ "{{ varnish_http_server_listen_on|default(http) }}" ]
+  saddr: "{{ varnish_allowed_hosts_http }}"
   accept_any: True
   weight: '10'
   role: 'varnish'
-  name: 'http_console'
-  multiport: True
+  name: 'http'
+  rule_state: 'present'
+- type: 'accept'
+  dport: [ "{{ varnish_management_console_listen_on|default(6082) }}" ]
+  saddr: "{{ varnish_deploy_group_ip_addr_list + varnish_allowed_hosts }}"
+  accept_any: True
+  weight: '20'
+  role: 'varnish'
+  name: 'console'
+  rule_state: 'present'
 - type: 'accept'
   chain: 'OUTPUT'
-  dport: [
-    "{{ varnish_backend|default(8080) }}"
-  ]
+  dport: [ "{{ varnish_backend|default(8080) }}" ]
   accept_any: True
   weight: '60'
   role: 'varnish'
   name: 'backend'
+  rule_state: 'present'
 
 varnish_app_name: 'default'
 

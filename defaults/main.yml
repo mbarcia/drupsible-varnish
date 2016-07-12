@@ -35,6 +35,11 @@ varnish_vcl: "{{ varnish_template_name }}"
 # child.
 varnish_debug: no
 
+# Determins whether to use option -j of varnishd
+varnish_jail_enabled: no
+varnish_jail_type: 'unix'
+varnish_jail_user: 'varnishd'
+
 # Run in background as a daemon.
 varnish_daemonize: yes
 
@@ -209,6 +214,8 @@ varnish_memlock: 82000
 # https://www.varnish-cache.org/docs/trunk/reference/varnishd.html#ref-varnishd-options
 varnish_params:
   pipe_timeout: 600
+  http_req_hdr_len: 16384
+  http_resp_hdr_len: 16384
 
 varnish_maintenance_page_markup: |
   <?xml version="1.0" encoding="utf-8"?>

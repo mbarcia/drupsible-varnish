@@ -5,3 +5,4 @@
 {% for allowed_ip in varnish_allowed_hosts %}
         "{{ allowed_ip }}";
 {% endfor %}
+        "127.0.0.0/24";

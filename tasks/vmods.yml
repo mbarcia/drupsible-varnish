@@ -50,3 +50,12 @@
     creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
   notify:
     - Restart varnish
+
+- name: Remove pre-requisite of varnish modules
+  package:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+  - libvarnishapi1
+  notify:
+  - Restart varnish

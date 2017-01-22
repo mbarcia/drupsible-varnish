@@ -17,7 +17,7 @@
   - python-sphinx
   - graphviz
   - libvarnishapi1
-  - libvarnishapi-dev
+  - varnish-dev
 
 - name: Download Varnish modules sources archive
   get_url:
@@ -50,21 +50,3 @@
     creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
   notify:
     - Restart varnish
-
-- name: Remove pre-requisite of varnish modules
-  package:
-    name: "{{ item }}"
-    state: absent
-  with_items:
-  - libvarnishapi1
-  notify:
-  - Restart varnish
-
-- name: Reinstall varnish
-  package:
-    name: "{{ item }}"
-    state: present
-  with_items:
-  - varnish
-  notify:
-  - Restart varnish

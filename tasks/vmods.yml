@@ -5,46 +5,4 @@
     name: "{{ item }}"
     state: present
   with_items:
-  - automake
-  - autotools-dev
-  - libedit-dev
-  - libjemalloc-dev
-  - libncurses-dev
-  - libpcre3-dev
-  - libtool
-  - libvarnishapi-dev
-  - pkg-config
-  - python-docutils
-  - python-sphinx
-
-- name: Download Varnish modules sources archive
-  get_url:
-    url: "https://github.com/varnish/varnish-modules/archive/{{ varnish_modules_release }}.zip"
-    dest: "{{ varnish_build_dir }}/{{ varnish_modules_release }}.zip"
-
-- name: Decompress Varnish modules sources archive
-  unarchive:
-    src: "{{ varnish_build_dir }}/{{ varnish_modules_release }}.zip"
-    dest: "{{ varnish_build_dir }}/"
-    creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/bootstrap"
-    copy: no
-
-- name: Run bootstrap to generate configure
-  shell: "./bootstrap"
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
-    creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/configure"
-
-- name: Run configure to create a Makefile
-  shell: "./configure"
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
-    creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/Makefile"
-
-- name: Run make install
-  command: make install
-  args:
-    chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
-    creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
-  notify:
-    - Restart varnish
+  - varnish-modules

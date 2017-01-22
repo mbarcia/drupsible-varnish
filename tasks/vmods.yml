@@ -59,3 +59,12 @@
   - libvarnishapi1
   notify:
   - Restart varnish
+
+- name: Reinstall varnish
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - varnish
+  notify:
+  - Restart varnish

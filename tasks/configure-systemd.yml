@@ -5,7 +5,6 @@
     creates: "/etc/systemd/system/{{ item }}.service"
   with_items:
   - "varnish"
-  - "varnishlog"
   - "varnishncsa"
   notify:
     - Reload systemd
@@ -20,7 +19,6 @@
     backup: yes
   with_items:
   - "varnish"
-  - "varnishlog"
   - "varnishncsa"
   notify:
     - Reload systemd

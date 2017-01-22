@@ -12,10 +12,11 @@
   - libncurses-dev
   - libpcre3-dev
   - libtool
-  - libvarnishapi-dev
   - pkg-config
   - python-docutils
   - python-sphinx
+  - graphviz
+  - varnish-dev
 
 - name: Download Varnish modules sources archive
   get_url:

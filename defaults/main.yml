@@ -319,7 +319,7 @@ varnish_cache_tag_header_forward_enabled: no
 # Default is the Cloudflare header.
 varnish_cache_tag_header_forwarded: "Cache-Tag"
 # Varnish modules (build from source)
-varnish_modules_release: "varnish-modules-0.9.0"
+varnish_modules_release: "varnish-modules-0.9.1"
 varnish_build_dir: "/tmp"
 
 # Varnish dev flag, enable on your local

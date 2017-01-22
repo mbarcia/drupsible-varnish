@@ -295,7 +295,7 @@ varnish_ferm_dependent_rules:
   name: 'backend'
   rule_state: 'present'
 
-varnish_app_name: 'default'
+varnish_app_name | regex_replace('[-.]', ''): 'default'
 
 # Backend default parameters
 varnish_be_connect_timeout: 30s

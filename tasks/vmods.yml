@@ -16,7 +16,6 @@
   - python-docutils
   - python-sphinx
   - graphviz
-  - libvarnishapi1
   - varnish-dev
 
 - name: Download Varnish modules sources archive

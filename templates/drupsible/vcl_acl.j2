@@ -1,8 +1,12 @@
-{% for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
-{% set net_mask = allowed_ip + '/255.255.255.0' %}
+acl internal {
+{% if (not varnish_in_cloud|bool) %}
+{%   for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
+{%     set net_mask = allowed_ip + '/255.255.255.0' %}
         "{{ net_mask | ipaddr('subnet') }}";
-{% endfor %}
+{%   endfor %}
+{% endif %}
 {% for allowed_ip in varnish_allowed_hosts %}
         "{{ allowed_ip }}";
 {% endfor %}
         "127.0.0.0/24";
+}

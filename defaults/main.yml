@@ -9,6 +9,10 @@ varnish_version: 4.1
 # server.identity from VCL
 varnish_identity: varnish
 
+# Switch to yes if in a cloud environment where the IPs of the web servers
+# are dynamic (not static/fixed at provision/config time)
+varnish_in_cloud: no
+
 # Specify a name for this instance. Amonst other things, this name is used to
 # construct the name of the directory in which varnishd keeps temporary files
 # and persistent state. If the specified name begins with a forward slash, it is

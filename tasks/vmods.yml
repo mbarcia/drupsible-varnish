@@ -17,11 +17,13 @@
   - python-sphinx
   - graphviz
   - varnish-dev
+  tags: [ provision ]
 
 - name: Download Varnish modules sources archive
   get_url:
     url: "https://github.com/varnish/varnish-modules/archive/{{ varnish_modules_release }}.zip"
     dest: "{{ varnish_build_dir }}/{{ varnish_modules_release }}.zip"
+  tags: [ provision ]
 
 - name: Decompress Varnish modules sources archive
   unarchive:
@@ -29,23 +31,27 @@
     dest: "{{ varnish_build_dir }}/"
     creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/bootstrap"
     copy: no
+  tags: [ provision ]
 
 - name: Run bootstrap to generate configure
   shell: "./bootstrap"
   args:
     chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
     creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/configure"
+  tags: [ provision ]
 
 - name: Run configure to create a Makefile
   shell: "./configure"
   args:
     chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
     creates: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}/Makefile"
+  tags: [ provision ]
 
 - name: Run make install
   command: make install
   args:
     chdir: "{{ varnish_build_dir }}/varnish-modules-{{ varnish_modules_release }}"
     creates: "{{ varnish_vmod_dir }}/libvmod_xkey.so"
+  tags: [ provision ]
   notify:
     - Restart varnish

@@ -4,6 +4,7 @@
   package:
     name: "{{ item }}"
     state: present
+    use: apt
   with_items:
   - automake
   - autotools-dev

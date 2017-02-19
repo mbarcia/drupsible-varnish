@@ -197,7 +197,7 @@ varnish_hash_algorithm:
 varnish_storage_backends:
   default:
     type: malloc
-    options: ['{{ansible_memtotal_mb / 2 | round() }}M']
+    options: ['{{ ansible_memtotal_mb|default(1024) / 2 | round() }}M']
 
 # The storage backend named "Transient" will be used for transient (short lived)
 # objects. By default Varnish uses an unlimited malloc backend for this.

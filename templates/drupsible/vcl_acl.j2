@@ -1,12 +1,15 @@
 acl internal {
-{% if (not varnish_in_cloud|bool) %}
-{%   for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
-{%     set net_mask = allowed_ip + '/255.255.255.0' %}
-        "{{ net_mask | ipaddr('subnet') }}";
-{%   endfor %}
+{% if app_target|default('prod') != "docker" and not varnish_in_cloud|bool%}
+  {% for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
+    {% set net_mask = allowed_ip + '/255.255.255.0' %}
+    {% set allowed_cidr = net_mask | ipaddr('subnet') %}
+    {% if allowed_cidr|default(False)|bool != 'False' %}
+    "{{ net_mask | ipaddr('subnet') }}";
+    {% endif %}
+  {% endfor %}
 {% endif %}
 {% for allowed_ip in varnish_allowed_hosts %}
-        "{{ allowed_ip }}";
+    "{{ allowed_ip }}";
 {% endfor %}
-        "127.0.0.0/24";
+    "127.0.0.0/24";
 }

@@ -1,4 +1,19 @@
 ---
+- name: Fail if vars undefined
+  fail:
+    msg: "varnish_deploy_group has not been set (or the inventory has no matching deploy group)."
+  when: groups[varnish_deploy_group] is undefined
+
+- name: Gather facts of designated backend servers
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_items: "{{ groups[varnish_deploy_group] }}"
+  when: app_target != 'docker'
+
+- set_fact:
+    varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
+
 - include: apt-repo.yml
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
   tags: [ provision ]
@@ -7,19 +22,11 @@
   package:
     name: "{{ item }}"
     state: latest
+    use: apt
   with_items:
   - 'python-pycurl'
   - varnish
   tags: [ provision ]
-
-- name: Gather facts of designated backend servers
-  setup:
-  delegate_to: "{{ item }}"
-  delegate_facts: True
-  with_items: "{{ groups[varnish_deploy_group] }}"
-
-- set_fact:
-    varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
 
 - include: prepare.yml
 
@@ -29,9 +36,19 @@
 - include: configure.yml
   when: ansible_distribution_release != 'jessie' and ansible_distribution_release != 'vivid'
 
+- name: Remove ulimit if in docker
+  lineinfile:
+    dest: "/etc/init.d/varnish"
+    regexp: "^ulimit"
+    state: absent
+  when: app_target == 'docker'
+  notify: Restart varnish
+
 - include: vmods.yml
 
 - include: vcl.yml
 
 - include: vcl-drupsible.yml
   when: varnish_template_name == 'drupsible'
+
+- meta: flush_handlers

@@ -95,6 +95,14 @@ sub vcl_backend_response {
     set beresp.do_esi = true;
   }
 
+  # Disable buffering only for BigPipe responses
+  if (beresp.http.Surrogate-Control ~ "BigPipe/1.0") {
+    set beresp.do_stream = true;
+    set beresp.ttl = 0s;
+    # Varnish gzipping breaks streaming of the first response
+    set beresp.do_gzip = false;
+  }
+
   # Large static files are delivered directly to the end-user without
   # waiting for Varnish to fully read the file first.
   # Varnish 4 fully supports Streaming, so use streaming here to avoid locking.

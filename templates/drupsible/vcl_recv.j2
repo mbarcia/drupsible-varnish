@@ -52,6 +52,14 @@
     return (pipe);
   }
 
+  # Disable buffering only for BigPipe responses
+  if (beresp.http.Surrogate-Control ~ "BigPipe/1.0") {
+    set beresp.do_stream = true;
+    set beresp.ttl = 0s;
+    # Varnish gzipping breaks streaming of the first response
+    set beresp.do_gzip = false;
+  }
+
   # Strip hash, server doesn't need it.
   if (req.url ~ "\#") {
     set req.url = regsub(req.url, "\#.*$", "");

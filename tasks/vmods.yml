@@ -6,8 +6,10 @@
     state: present
     use: apt
   with_items:
+  - unzip
   - automake
   - autotools-dev
+  - build-essential
   - libedit-dev
   - libjemalloc-dev
   - libncurses-dev
@@ -18,7 +20,6 @@
   - python-sphinx
   - graphviz
   - varnish-dev
-  - unzip
   tags: [ provision ]
 
 - name: Download Varnish modules sources archive

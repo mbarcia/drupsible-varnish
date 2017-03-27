@@ -18,6 +18,7 @@
   - python-sphinx
   - graphviz
   - varnish-dev
+  - unzip
   tags: [ provision ]
 
 - name: Download Varnish modules sources archive

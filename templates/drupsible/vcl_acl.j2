@@ -1,5 +1,5 @@
 acl internal {
-{% if app_target|default('prod') != "docker" and not varnish_in_cloud|bool%}
+{% if not varnish_in_container|d(False)|bool and not varnish_in_cloud|bool %}
   {% for allowed_ip in varnish_deploy_group_ip_addr.replace('\n', '').split(',') %}
     {% set net_mask = allowed_ip + '/255.255.255.0' %}
     {% set allowed_cidr = net_mask | ipaddr('subnet') %}

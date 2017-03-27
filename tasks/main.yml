@@ -9,7 +9,7 @@
   delegate_to: "{{ item }}"
   delegate_facts: True
   with_items: "{{ groups[varnish_deploy_group] }}"
-  when: app_target != 'docker'
+  when: not varnish_in_container|d(False)|bool
 
 - set_fact:
     varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
@@ -36,12 +36,12 @@
 - include: configure.yml
   when: ansible_distribution_release != 'jessie' and ansible_distribution_release != 'vivid'
 
-- name: Remove ulimit if in docker
+- name: Remove ulimit if in docker container
   lineinfile:
     dest: "/etc/init.d/varnish"
     regexp: "^ulimit"
     state: absent
-  when: app_target == 'docker'
+  when: varnish_in_container|d(False)|bool
   notify: Restart varnish
 
 - include: vmods.yml

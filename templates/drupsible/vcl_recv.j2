@@ -9,12 +9,14 @@
   # Normalize the query arguments
   set req.url = std.querysort(req.url);
 
-{% if varnish_trusted_hosts_enable|bool %}
+{% if varnish_trusted_hosts_enable|d(True)|bool %}
   if (
     req.http.Host != "{{ app_webhost }}.{{ varnish_webdomain }}" &&
-{% for trusted_host in varnish_trusted_hosts|default([]) %}
+{% if varnish_trusted_hosts is defined %}
+  {% for trusted_host in varnish_trusted_hosts %}
     req.http.Host != "{{ trusted_host }}" &&
-{% endfor %}
+  {% endfor %}
+{% endif %}
     req.http.Host !~ "(?i)^.*{{ varnish_webdomain|regex_replace('[.]', '\\.') }}$"
   ) {
     return (synth(418, "http://" + req.http.Host + req.url));

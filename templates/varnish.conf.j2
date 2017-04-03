@@ -13,11 +13,12 @@ NFILES={{varnish_ulimit}}
 # you need to increase this number as well
 MEMLOCK={{varnish_memlock}}
 
-DAEMON_OPTS="-i {{varnish_identity}}\
- -n {{varnish_instance_name}}\
+DAEMON_OPTS="\
 {% if varnish_jail_enabled|default('False')|bool %}
- -j {{ varnish_jail_type|default('unix') }},user={{ varnish_jail_user|default('varnishd') }}\
+-j {{ varnish_jail_type|default('unix') }},user={{ varnish_jail_user|default('varnishd') }}\
 {% endif %}
+ -i {{varnish_identity}}\
+ -n {{varnish_instance_name}}\
 {% if varnish_vcl is defined and varnish_vcl != 'no' %}
  -f {{varnish_vcl_dir}}/{{varnish_vcl}}.vcl\
 {% else %}

@@ -52,3 +52,26 @@
   when: varnish_template_name == 'drupsible'
 
 - meta: flush_handlers
+  when: not varnish_in_container|d(False)|bool
+
+- name: Test if using a phusion image
+  stat:
+    path: "/sbin/my_init"
+  register: varnish_my_init_output
+  when: varnish_in_container|d(False)|bool
+  tags: [ provision ]
+
+- name: Make sure /etc/service/varnish exists
+  file:
+    path: /etc/service/varnish
+    state: directory
+  when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
+  tags: [ provision ]
+
+- name: Install varnish at boot
+  copy:
+    src: varnish-init.sh
+    dest: /etc/service/varnish/run
+    mode: "a+x"
+  when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
+  tags: [ provision ]

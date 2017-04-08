@@ -15,7 +15,7 @@ MEMLOCK={{varnish_memlock}}
 
 DAEMON_OPTS="\
 {% if varnish_jail_enabled|default('False')|bool %}
--j {{ varnish_jail_type|default('unix') }},user={{ varnish_jail_user|default('varnishd') }}\
+-j {{ varnish_jail_type|default('unix') }},user={{ varnish_jail_user|default('varnish') }}\
 {% endif %}
  -i {{varnish_identity}}\
  -n {{varnish_instance_name}}\
@@ -29,12 +29,6 @@ DAEMON_OPTS="\
 {% endif %}
 {% if not varnish_daemonize %}
  -F\
-{% endif %}
-{% if varnish_user %}
- -u {{varnish_user}}\
-{% endif %}
-{% if varnish_group %}
- -g {{varnish_group}}\
 {% endif %}
 {% if varnish_http_server %}
 {% if varnish_http_server_listen_on is string %}

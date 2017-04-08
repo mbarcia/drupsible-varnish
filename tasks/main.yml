@@ -68,6 +68,12 @@
   when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
   tags: [ provision ]
 
+- name: Make sure user vcache belongs to group varnish
+  user: 
+    name: vcache
+    state: present
+    groups: [ varnish ]
+
 - name: Install varnish at boot
   copy:
     src: varnish-init.sh

@@ -42,18 +42,12 @@ varnish_debug: no
 # Determins whether to use option -j of varnishd
 varnish_jail_enabled: no
 varnish_jail_type: 'unix'
-varnish_jail_user: 'varnishd'
+varnish_jail_user: 'varnish'
 
 # Run in background as a daemon.
 varnish_daemonize: yes
 
-# Specifies the names of the unprivileged user:group to which the child process
-# should switch before it starts accepting connections.
-varnish_user:
-varnish_group:
-
 varnish_environment: {}
-
 
 # Interfaces
 # -----------

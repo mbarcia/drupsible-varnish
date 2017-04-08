@@ -1,4 +1,4 @@
-{% for host in groups[varnish_deploy_group] %}
+{% for host in varnish_backend_hosts|d(groups[varnish_deploy_group])|d(['localhost']) %}
 backend {{ varnish_app_name | regex_replace('[-.]', '') }}_{{ host | regex_replace('[-.]', '') }} {
   .host = "{{ host }}";
   .port = "{{ varnish_apache2_port }}";

@@ -3,7 +3,7 @@ vcl 4.0;
 # {{ ansible_managed }}
 
 # Load the directors.
-import directors;    
+import directors;
 # Import VMod's.
 import std;
 # Cache tags support
@@ -30,7 +30,9 @@ sub vcl_hash {
   # Called after vcl_recv to create a hash value for the request. This is used as a key
   # to look up the object in Varnish.
 
-  hash_data(req.url);
+  # hash_data(req.url);
+  # Drupal 7 DDoS vulnerability https://www.drupal.org/SA-CORE-2013-002
+  hash_data(regsub(req.url, "\?(.*)itok=.+[^&amp;]", "\1"));
 
   if (req.http.Host) {
     hash_data(req.http.Host);
@@ -49,7 +51,7 @@ sub vcl_hash {
     hash_data(req.http.X-Forwarded-Proto);
   }
 
-  # Avoid adding more hash keys coming from the default VCL 
+  # Avoid adding more hash keys coming from the default VCL
   return (lookup);
 }
 
@@ -121,7 +123,7 @@ sub vcl_backend_response {
   }
 {% endif %}
 
-  # We need to cache 404s and 301s. Otherwise, depending on backend but 
+  # We need to cache 404s and 301s. Otherwise, depending on backend but
   # definitely in Drupal case these responses are not cacheable by default.
   if (beresp.status == 404 || beresp.status == 301) {
     if (beresp.ttl <= 0s) {

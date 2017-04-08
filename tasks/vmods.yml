@@ -4,9 +4,12 @@
   package:
     name: "{{ item }}"
     state: present
+    use: apt
   with_items:
+  - unzip
   - automake
   - autotools-dev
+  - build-essential
   - libedit-dev
   - libjemalloc-dev
   - libncurses-dev

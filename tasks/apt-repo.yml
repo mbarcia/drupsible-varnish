@@ -9,9 +9,10 @@
   package:
     name: apt-transport-https
     state: present
+    use: apt
 
 - name: Add Varnish APT repository
   apt_repository: 
-    repo: "deb https://repo.varnish-cache.org/{{ansible_distribution|lower()}}/ {{ansible_distribution_release}} varnish-{{varnish_version}}"
+    repo: "deb https://repo.varnish-cache.org/{{ ansible_distribution|lower() }}/ {{ ansible_distribution_release }} varnish-{{varnish_version}}"
     update_cache: yes
     state: present

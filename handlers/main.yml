@@ -1,8 +1,10 @@
 ---
 - name: Reload systemd
   command: systemctl daemon-reload
+  when: not varnish_in_container|d(False)|bool
 
 - name: Restart varnish
   service: 
     name: varnish 
     state: restarted
+  when: not varnish_in_container|d(False)|bool

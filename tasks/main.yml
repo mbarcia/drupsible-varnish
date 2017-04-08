@@ -1,4 +1,19 @@
 ---
+- name: Fail if vars undefined
+  fail:
+    msg: "varnish_deploy_group has not been set (or the inventory has no matching deploy group)."
+  when: groups[varnish_deploy_group] is undefined
+
+- name: Gather facts of designated backend servers
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_items: "{{ groups[varnish_deploy_group] }}"
+  when: not varnish_in_container|d(False)|bool
+
+- set_fact:
+    varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
+
 - include: apt-repo.yml
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
   tags: [ provision ]
@@ -7,19 +22,11 @@
   package:
     name: "{{ item }}"
     state: latest
+    use: apt
   with_items:
   - 'python-pycurl'
   - varnish
   tags: [ provision ]
-
-- name: Gather facts of designated backend servers
-  setup:
-  delegate_to: "{{ item }}"
-  delegate_facts: True
-  with_items: "{{ groups[varnish_deploy_group] }}"
-
-- set_fact:
-    varnish_ferm_dependent_rules_exported: "{{ varnish_ferm_dependent_rules }}"
 
 - include: prepare.yml
 
@@ -29,9 +36,49 @@
 - include: configure.yml
   when: ansible_distribution_release != 'jessie' and ansible_distribution_release != 'vivid'
 
+- name: Remove ulimit if in docker container
+  lineinfile:
+    dest: "/etc/init.d/varnish"
+    regexp: "^ulimit"
+    state: absent
+  when: varnish_in_container|d(False)|bool
+  notify: Restart varnish
+
 - include: vmods.yml
 
 - include: vcl.yml
 
 - include: vcl-drupsible.yml
   when: varnish_template_name == 'drupsible'
+
+- name: Make sure user vcache belongs to group varnish
+  user: 
+    name: vcache
+    state: present
+    group: varnish
+  tags: [ provision ]
+
+- meta: flush_handlers
+  when: not varnish_in_container|d(False)|bool
+
+- name: Test if using a phusion image
+  stat:
+    path: "/sbin/my_init"
+  register: varnish_my_init_output
+  when: varnish_in_container|d(False)|bool
+  tags: [ provision ]
+
+- name: Make sure /etc/service/varnish exists
+  file:
+    path: /etc/service/varnish
+    state: directory
+  when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
+  tags: [ provision ]
+
+- name: Install varnish at boot
+  copy:
+    src: varnish-init.sh
+    dest: /etc/service/varnish/run
+    mode: "a+x"
+  when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
+  tags: [ provision ]

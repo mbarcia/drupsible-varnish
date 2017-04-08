@@ -72,7 +72,7 @@
   user: 
     name: vcache
     state: present
-    groups: [ varnish ]
+    group: varnish
 
 - name: Install varnish at boot
   copy:

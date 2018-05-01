@@ -2,6 +2,10 @@
 # app template name
 varnish_template_name: "drupsible"
 
+# Package installation
+varnish_base_pkg_url: https://packagecloud.io/varnishcache
+varnish_pkg_path: "varnish{{ varnish_version | replace('.', '') }}"
+
 # See https://www.varnish-cache.org/docs/4.1/ for the official documentation
 varnish_version: 4.1
 

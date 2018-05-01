@@ -1,9 +1,19 @@
 ---
-- name: Add Varnish APT signing key
+- name: Ensure Varnish from old packager is uninstalled first
+  apt:
+    name: "varnish"
+    state: absent
+
+- name: Remove old Varnish APT signing key if present
   apt_key: 
-    url: "https://repo.varnish-cache.org/GPG-key.txt"
     id: C4DEFFEB
-    state: present
+    state: absent
+
+- name: Remove old Varnish APT repository if present
+  apt_repository: 
+    repo: "deb https://repo.varnish-cache.org/{{ ansible_distribution|lower() }}/ {{ ansible_distribution_release }} varnish-{{ varnish_version }}"
+    update_cache: yes
+    state: absent
 
 - name: Install APT HTTPS transport
   package:
@@ -11,8 +21,17 @@
     state: present
     use: apt
 
-- name: Add Varnish APT repository
-  apt_repository: 
-    repo: "deb https://repo.varnish-cache.org/{{ ansible_distribution|lower() }}/ {{ ansible_distribution_release }} varnish-{{varnish_version}}"
-    update_cache: yes
+- name: Add packagecloud.io Varnish apt key
+  apt_key:
+    url: "{{ varnish_base_pkg_url }}/{{ varnish_pkg_path }}/gpgkey"
+    state: present
+
+- name: Add packagecloud.io Varnish apt repository
+  apt_repository:
+    repo: "deb {{ varnish_base_pkg_url }}/{{ varnish_pkg_path }}/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main"
+    state: present
+
+- name: Ensure Varnish is installed
+  apt:
+    name: "varnish"
     state: present

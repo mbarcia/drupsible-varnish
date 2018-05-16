@@ -29,13 +29,9 @@
       # Not from an allowed IP? Then die with an error.
       return (synth(405, "This IP is not allowed to send PURGE requests."));
     }
-    if (req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) {
+    if (req.http.{{ varnish_cache_tag_header_request|default('Cache-Tags') }}) {
       # Purge all the cache tags in the PURGE request
-      if (xkey.purge(req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) != 0) {
-        return (synth(200, "Purged"));
-      } else {
-        return (synth(404, "Key not found"));
-      }
+      set req.http.n-gone = xkey.softpurge(req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }});
     }
     # If you got this stage (and didn't error out above), purge the cached result
     return(purge);

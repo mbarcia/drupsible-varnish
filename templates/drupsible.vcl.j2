@@ -181,10 +181,11 @@ sub vcl_deliver {
 {% if varnish_cache_tag_header_forward_enabled|default(False)|bool %}
   {% if varnish_cache_tag_header_forwarded != varnish_cache_tag_header_request %}
   # Forward the backend cache tags to the client in a designated header in the response
-  set resp.http.{{ varnish_cache_tag_header_forwarded|default('Cache-Tags') }} = resp.http.{{ varnish_cache_tag_header_requestdefault('Purge-Cache-Tags') }};
-  unset resp.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }};
+  set resp.http.{{ varnish_cache_tag_header_forwarded|default('Cache-Tag') }} = resp.http.{{ varnish_cache_tag_header_request|default('Cache-Tags') }};
   {% endif %}
 {% endif %}
+
+  unset resp.http.{{ varnish_cache_tag_header_request|default('Cache-Tags') }};
 
   return (deliver);
 }

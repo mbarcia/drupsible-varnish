@@ -314,8 +314,8 @@ varnish_be_probe_initial: 2
 #
 # Cache tags section
 #
-# Default is to process cache tags in the header added by the Purge drupal module.
-varnish_cache_tag_header_request: "Purge-Cache-Tag"
+# Default is to process cache tags in the header added by the Varnish purger drupal module.
+varnish_cache_tag_header_request: "Cache-Tags"
 # Default is to NOT forward the cache tag to the client.
 varnish_cache_tag_header_forward_enabled: no
 # Default is the Cloudflare header.

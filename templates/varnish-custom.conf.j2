@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+
+[Service]
+EnvironmentFile={{ varnish_conf_file }}
+ExecStart=
+ExecStart=/usr/sbin/varnishd $DAEMON_OPTS

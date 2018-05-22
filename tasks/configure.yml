@@ -1,5 +1,19 @@
 ---
-- name: Configure Varnish
+- name: Template Varnish env file
   template:
     src: varnish.conf.j2
     dest: "{{ varnish_conf_file }}"
+  notify:
+    - Reload systemd
+
+- name: Make sure /etc/systemd/system/varnish.service.d exists
+  file:
+    path: /etc/systemd/system/varnish.service.d
+    state: directory
+
+- name: Template Varnish custom config file for systemd
+  template:
+    src: varnish-custom.conf.j2
+    dest: "/etc/systemd/system/varnish.service.d/{{ varnish_custom_systemd_conf_file }}"
+  notify:
+    - Reload systemd

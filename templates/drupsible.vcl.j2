@@ -91,6 +91,10 @@ sub vcl_hit {
 sub vcl_backend_response {
   # Called after the response headers has been successfully retrieved from the backend.
 
+  # Set ban-lurker friendly custom headers.
+  set beresp.http.X-Url = bereq.url;
+  set beresp.http.X-Host = bereq.http.host;
+
   # Pause ESI request and remove Surrogate-Control header
   if (beresp.http.Surrogate-Control ~ "ESI/1.0") {
     unset beresp.http.Surrogate-Control;
@@ -150,6 +154,10 @@ sub vcl_backend_response {
 # Last chance to modify headers that are sent to the client
 sub vcl_deliver {
   # Called before a cached object is delivered to the client.
+
+  # Remove ban-lurker friendly custom headers when delivering to client.
+  unset resp.http.X-Url;
+  unset resp.http.X-Host;
 
 {% if varnish_development_enabled|default(False)|bool %}
   if (obj.hits > 0) {

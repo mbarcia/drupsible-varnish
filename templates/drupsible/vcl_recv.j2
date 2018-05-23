@@ -23,23 +23,38 @@
   }
 {% endif %}
 
-  # Allow purging
-  if (req.method == "PURGE") {
+  if (req.method == "PURGE" || req.method == "BAN") {
     if (!client.ip ~ internal) {
       # Not from an allowed IP? Then die with an error.
-      return (synth(405, "This IP is not allowed to send PURGE requests."));
+      return (synth(405, "This IP is not allowed to send PURGE/BAN requests."));
     }
-    if (req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) {
+  }
+  
+  # Allow soft PURGE of {{ varnish_cache_tag_header_request }}
+  if (req.method == "PURGE") {
+    if (req.http.{{ varnish_cache_tag_header_request }}) {
       # Purge all the cache tags in the PURGE request
-      if (xkey.purge(req.http.{{ varnish_cache_tag_header_request|default('Purge-Cache-Tags') }}) != 0) {
-        return (synth(200, "Purged"));
-      } else {
-        return (synth(404, "Key not found"));
+      if (xkey.softpurge(req.http.{{ varnish_cache_tag_header_request }}) != 0) {
+        return (synth(200, "Soft-PURGEd " + req.http.c));
+      }
+      else {
+        return (synth(204, "Key not found when trying to soft-PURGE " + req.http.{{ varnish_cache_tag_header_request }}));
       }
     }
     # If you got this stage (and didn't error out above), purge the cached result
     return(purge);
   }
+
+  # Allow BAN
+  if (req.method == "BAN") {
+	  if (req.http.{{ varnish_cache_tag_header_request }}) {
+	    ban("obj.http.{{ varnish_cache_tag_header_request }} ~ " + req.http.{{ varnish_cache_tag_header_request }});
+	    return (synth(200, "BAN added for " + req.http.{{ varnish_cache_tag_header_request }}));
+	  }
+	  else {
+	    return (synth(403, req.http.{{ varnish_cache_tag_header_request }} + " header missing from BAN"));
+	  }
+  }	
 
   # Only deal with "normal" types
   if (req.method != "GET" &&

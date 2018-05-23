@@ -26,6 +26,7 @@ varnish_instance_name: "{{varnish_identity}}"
 
 varnish_conf_dir: "/etc/{{varnish_instance_name}}"
 varnish_conf_file: "/etc/default/{{varnish_instance_name}}"
+varnish_custom_systemd_conf_file: "{{varnish_instance_name}}.conf"
 # Directory from which relative VCL filenames (vcl.load and include) are opened.
 varnish_vcl_dir: "{{varnish_conf_dir}}"
 # Directory where VCL modules are to be found.
@@ -314,8 +315,8 @@ varnish_be_probe_initial: 2
 #
 # Cache tags section
 #
-# Default is to process cache tags in the header added by the Purge drupal module.
-varnish_cache_tag_header_request: "Purge-Cache-Tag"
+# Default is to process cache tags in the header added by the Varnish purger drupal module.
+varnish_cache_tag_header_request: "Cache-Tags"
 # Default is to NOT forward the cache tag to the client.
 varnish_cache_tag_header_forward_enabled: no
 # Default is the Cloudflare header.

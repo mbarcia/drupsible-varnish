@@ -45,6 +45,7 @@
   notify: Restart varnish
 
 - include: vmods.yml
+  when: varnish_version|version_compare('5.2', '<')
 
 - include: vcl.yml
 

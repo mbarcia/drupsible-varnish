@@ -1,11 +1,11 @@
 drupsible-varnish
 =================
 
-Installs and configures Varnish 4.1 for Debian (including systemd) and Ubuntu.
+Installs and configures Varnish 6.0 for Debian (including systemd) and Ubuntu.
 
 It allows for a customized VCL template, as well as complete fine-tuning of the Varnish server. 
 
-It also installs the newest 4.1 vmods from source.
+It also installs the newest vmods from source (0.15.0).
 
 Read more comments at defaults/main.yml.
 

@@ -56,7 +56,6 @@
     name: vcache
     state: present
     group: varnish
-  tags: [ provision ]
 
 - meta: flush_handlers
   when: not varnish_in_container|d(False)|bool
@@ -66,14 +65,12 @@
     path: "/sbin/my_init"
   register: varnish_my_init_output
   when: varnish_in_container|d(False)|bool
-  tags: [ provision ]
 
 - name: Make sure /etc/service/varnish exists
   file:
     path: /etc/service/varnish
     state: directory
   when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
-  tags: [ provision ]
 
 - name: Install varnish at boot
   copy:
@@ -81,4 +78,3 @@
     dest: /etc/service/varnish/run
     mode: "a+x"
   when: varnish_in_container|d(False)|bool and varnish_my_init_output.stat.exists
-  tags: [ provision ]

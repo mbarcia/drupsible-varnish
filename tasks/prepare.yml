@@ -17,14 +17,15 @@
   register: secret_remote
   when: secret_file.stat.exists
   changed_when: no
+#  no_log: True
 
 - name: Create/read secret local file
   shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }}
   register: secret_local
   changed_when: no
-  no_log: True
+#  no_log: True
 
 - name: Copy secret key file if needed
-  shell: echo {{ lookup('password', secret + '/credentials/' + inventory_hostname + '/varnish/secret chars=ascii_letters,digits,hexdigits') }} > {{ varnish_management_console_secret_file }}
-  when: secret_remote is not defined or secret_local.stdout != secret_remote.stdout
-  no_log: True
+  shell: echo {{ secret_local.stdout }} > {{ varnish_management_console_secret_file }}
+  when: secret_remote is not defined or (secret_remote is defined and secret_local.stdout != secret_remote.stdout)
+#  no_log: True

@@ -12,7 +12,6 @@
 - name: Remove old Varnish APT repository if present
   apt_repository: 
     repo: "deb https://repo.varnish-cache.org/{{ ansible_distribution|lower() }}/ {{ ansible_distribution_release }} varnish-{{ varnish_version }}"
-    update_cache: yes
     state: absent
 
 - name: Install APT HTTPS transport
@@ -35,3 +34,6 @@
   apt:
     name: "varnish"
     state: present
+    update_cache: yes
+
+    

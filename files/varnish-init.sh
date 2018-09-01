@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source /etc/default/varnish && /usr/sbin/varnishd $DAEMON_OPTS
+source /etc/default/varnish && exec /usr/sbin/varnishd $DAEMON_OPTS
 

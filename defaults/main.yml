@@ -50,7 +50,7 @@ varnish_jail_type: 'unix'
 varnish_jail_user: 'varnish'
 
 # Run in background as a daemon.
-varnish_daemonize: "{{ (varnish_in_container|d(False)|bool|ternary(False, True) }}"
+varnish_daemonize: "{{ varnish_in_container|d(False)|bool|ternary(False, True) }}"
 
 varnish_environment: {}
 

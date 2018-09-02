@@ -16,3 +16,7 @@
     dest: /etc/service/varnish/run
     mode: "a+x"
   when: varnish_my_init_output.stat.exists
+
+- name: Stop service
+  command: service varnish stop
+  when: varnish_my_init_output.stat.exists

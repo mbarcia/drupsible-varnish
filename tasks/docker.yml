@@ -16,3 +16,4 @@
     dest: /etc/service/varnish/run
     mode: "a+x"
   when: varnish_my_init_output.stat.exists
+
